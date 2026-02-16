@@ -1,0 +1,28 @@
+name: Feature
+description: 新機能 / 改善
+title: "[Feature] "
+labels: ["feature"]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: 目的（なぜ必要？）
+      description: 背景と狙いを1〜3行で
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 受け入れ条件（確認可能な表現）
+      description: "例：ボタン押下で結果が表示される / エラー時にメッセージが出る"
+    validations:
+      required: true
+
+  - type: textarea
+    id: verify
+    attributes:
+      label: 確認手順（どうやって確認する？）
+      description: コピペで追える形が理想
+    validations:
+      required: true

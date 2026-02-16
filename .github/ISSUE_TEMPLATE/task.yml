@@ -1,0 +1,18 @@
+name: Task
+description: 調査・雑務・リファクタなど
+title: "[Task] "
+labels: ["chore"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: やること（要約）
+    validations:
+      required: true
+
+  - type: textarea
+    id: done
+    attributes:
+      label: 完了条件（何ができたら終わり？）
+    validations:
+      required: true
