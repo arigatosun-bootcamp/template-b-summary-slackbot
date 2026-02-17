@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/session-init.sh\"",
+            "command": "bash .claude/hooks/session-init.sh",
             "timeout": 30
           }
         ]
@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/pre-bash-check.sh\""
+            "command": "bash .claude/hooks/pre-bash-check.sh"
           }
         ]
       }
@@ -29,7 +29,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/ci-log.sh\"",
+            "command": "bash .claude/hooks/ci-log.sh",
             "timeout": 10
           }
         ]
@@ -41,7 +41,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/save-session-log.js\"",
+            "command": "node .claude/hooks/save-session-log.js",
             "timeout": 30
           }
         ]

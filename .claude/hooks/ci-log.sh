@@ -1,8 +1,6 @@
 #!/bin/bash
 # PostToolUse: lint/typecheck/test コマンド実行後にログを記録するフック
 
-cd "$CLAUDE_PROJECT_DIR" 2>/dev/null || exit 0
-
 INPUT=$(cat)
 CMD=$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)
 EXIT_CODE=$(echo "$INPUT" | jq -r '.tool_result.exitCode // empty' 2>/dev/null)
@@ -13,7 +11,7 @@ fi
 
 # lint/typecheck/test コマンドのみログ対象
 if echo "$CMD" | grep -qE "npm run (lint|typecheck|test)|npm test|vitest|tsc|eslint"; then
-  LOG_DIR="$CLAUDE_PROJECT_DIR/.claude/logs"
+  LOG_DIR=".claude/logs"
   mkdir -p "$LOG_DIR"
 
   LOG_FILE="$LOG_DIR/ci-$(date +%Y-%m-%d).log"

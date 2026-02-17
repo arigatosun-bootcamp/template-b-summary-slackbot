@@ -2,8 +2,6 @@
 # Bashコマンド実行前のチェックフック
 # mainブランチへの直接commit/pushをブロック
 
-cd "$CLAUDE_PROJECT_DIR" 2>/dev/null || exit 0
-
 INPUT=$(cat)
 CMD=$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)
 
