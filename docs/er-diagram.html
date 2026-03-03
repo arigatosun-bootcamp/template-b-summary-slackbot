@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ER図 — Summary Slackbot</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1d21;
+            color: #d1d2d3;
+            padding: 40px;
+        }
+        h1 { color: #fff; margin-bottom: 8px; font-size: 28px; }
+        .subtitle { color: #9ea0a5; margin-bottom: 40px; font-size: 14px; }
+        h2 {
+            color: #fff; font-size: 20px; margin: 48px 0 20px;
+            padding-bottom: 8px; border-bottom: 1px solid #393b40;
+        }
+
+        /* ER図コンテナ */
+        .er-container {
+            display: flex;
+            gap: 40px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            margin-bottom: 48px;
+            position: relative;
+        }
+
+        /* テーブルカード */
+        .table-card {
+            background: #222529;
+            border: 1px solid #393b40;
+            border-radius: 8px;
+            min-width: 320px;
+            overflow: hidden;
+        }
+        .table-header {
+            padding: 12px 16px;
+            font-weight: 700;
+            font-size: 16px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .table-header .icon { font-size: 18px; }
+        .table-header.primary { background: #7b68ee; }
+        .table-header.secondary { background: #4a9; }
+        .table-header.tertiary { background: #e8912d; }
+
+        .column-list { padding: 0; }
+        .column-row {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            border-bottom: 1px solid #2c2f33;
+            font-size: 14px;
+        }
+        .column-row:last-child { border-bottom: none; }
+        .column-row:hover { background: rgba(255,255,255,0.02); }
+
+        .col-name {
+            font-weight: 600;
+            color: #fff;
+            width: 180px;
+            flex-shrink: 0;
+        }
+        .col-type {
+            color: #7b68ee;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            width: 120px;
+            flex-shrink: 0;
+        }
+        .col-desc {
+            color: #9ea0a5;
+            font-size: 13px;
+        }
+        .col-badge {
+            display: inline-block;
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 3px;
+            margin-left: 6px;
+            font-weight: 700;
+        }
+        .badge-pk { background: #e8912d; color: #1a1d21; }
+        .badge-fk { background: #1d9bd1; color: #1a1d21; }
+        .badge-nn { background: #393b40; color: #d1d2d3; }
+
+        /* リレーション説明 */
+        .relation-section {
+            max-width: 800px;
+            margin-bottom: 48px;
+        }
+        .relation-card {
+            background: #222529;
+            border: 1px solid #393b40;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .relation-arrow {
+            font-size: 24px;
+            color: #7b68ee;
+            flex-shrink: 0;
+        }
+        .relation-text {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .relation-text strong { color: #fff; }
+        .relation-type {
+            background: #393b40;
+            color: #d1d2d3;
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        /* SVG ER図 */
+        .er-diagram-visual {
+            background: #222529;
+            border: 1px solid #393b40;
+            border-radius: 8px;
+            padding: 32px;
+            margin-bottom: 48px;
+            overflow-x: auto;
+        }
+        svg text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    </style>
+</head>
+<body>
+
+<h1>ER図 — Summary Slackbot</h1>
+<p class="subtitle">Supabase上のテーブル構造とリレーションを定義</p>
+
+<!-- ===== ER図（ビジュアル） ===== -->
+<h2>テーブルリレーション図</h2>
+
+<div class="er-diagram-visual">
+    <svg width="860" height="420" viewBox="0 0 860 420">
+        <!-- workspaces テーブル -->
+        <rect x="20" y="30" width="240" height="200" rx="8" fill="#222529" stroke="#4a9" stroke-width="2"/>
+        <rect x="20" y="30" width="240" height="36" rx="8" fill="#4a9"/>
+        <rect x="20" y="58" width="240" height="8" fill="#4a9"/>
+        <text x="140" y="54" text-anchor="middle" fill="#1a1d21" font-weight="700" font-size="14">workspaces</text>
+        <text x="36" y="88" fill="#e8912d" font-size="12" font-weight="700">PK</text>
+        <text x="60" y="88" fill="#fff" font-size="13" font-weight="600">id</text>
+        <text x="180" y="88" fill="#7b68ee" font-size="12" font-family="Courier New">uuid</text>
+        <text x="36" y="112" fill="#9ea0a5" font-size="12">　</text>
+        <text x="60" y="112" fill="#d1d2d3" font-size="13">team_id</text>
+        <text x="180" y="112" fill="#7b68ee" font-size="12" font-family="Courier New">text</text>
+        <text x="60" y="136" fill="#d1d2d3" font-size="13">team_name</text>
+        <text x="180" y="136" fill="#7b68ee" font-size="12" font-family="Courier New">text</text>
+        <text x="60" y="160" fill="#d1d2d3" font-size="13">bot_token</text>
+        <text x="180" y="160" fill="#7b68ee" font-size="12" font-family="Courier New">text</text>
+        <text x="60" y="184" fill="#d1d2d3" font-size="13">created_at</text>
+        <text x="180" y="184" fill="#7b68ee" font-size="12" font-family="Courier New">timestamp</text>
+        <text x="60" y="208" fill="#d1d2d3" font-size="13">updated_at</text>
+        <text x="180" y="208" fill="#7b68ee" font-size="12" font-family="Courier New">timestamp</text>
+
+        <!-- channels テーブル -->
+        <rect x="20" y="270" width="240" height="140" rx="8" fill="#222529" stroke="#e8912d" stroke-width="2"/>
+        <rect x="20" y="270" width="240" height="36" rx="8" fill="#e8912d"/>
+        <rect x="20" y="298" width="240" height="8" fill="#e8912d"/>
+        <text x="140" y="294" text-anchor="middle" fill="#1a1d21" font-weight="700" font-size="14">channels</text>
+        <text x="36" y="328" fill="#e8912d" font-size="12" font-weight="700">PK</text>
+        <text x="60" y="328" fill="#fff" font-size="13" font-weight="600">id</text>
+        <text x="180" y="328" fill="#7b68ee" font-size="12" font-family="Courier New">uuid</text>
+        <text x="36" y="352" fill="#1d9bd1" font-size="12" font-weight="700">FK</text>
+        <text x="60" y="352" fill="#d1d2d3" font-size="13">workspace_id</text>
+        <text x="180" y="352" fill="#7b68ee" font-size="12" font-family="Courier New">uuid</text>
+        <text x="60" y="376" fill="#d1d2d3" font-size="13">channel_id</text>
+        <text x="180" y="376" fill="#7b68ee" font-size="12" font-family="Courier New">text</text>
+        <text x="60" y="400" fill="#d1d2d3" font-size="13">channel_name</text>
+        <text x="180" y="400" fill="#7b68ee" font-size="12" font-family="Courier New">text</text>
+
+        <!-- summaries テーブル -->
+        <rect x="380" y="50" width="460" height="340" rx="8" fill="#222529" stroke="#7b68ee" stroke-width="2"/>
+        <rect x="380" y="50" width="460" height="36" rx="8" fill="#7b68ee"/>
+        <rect x="380" y="78" width="460" height="8" fill="#7b68ee"/>
+        <text x="610" y="74" text-anchor="middle" fill="#1a1d21" font-weight="700" font-size="14">summaries</text>
+        <text x="396" y="108" fill="#e8912d" font-size="12" font-weight="700">PK</text>
+        <text x="420" y="108" fill="#fff" font-size="13" font-weight="600">id</text>
+        <text x="580" y="108" fill="#7b68ee" font-size="12" font-family="Courier New">uuid</text>
+        <text x="700" y="108" fill="#9ea0a5" font-size="12">主キー</text>
+        <text x="396" y="136" fill="#1d9bd1" font-size="12" font-weight="700">FK</text>
+        <text x="420" y="136" fill="#d1d2d3" font-size="13">workspace_id</text>
+        <text x="580" y="136" fill="#7b68ee" font-size="12" font-family="Courier New">uuid</text>
+        <text x="700" y="136" fill="#9ea0a5" font-size="12">→ workspaces.id</text>
+        <text x="396" y="164" fill="#1d9bd1" font-size="12" font-weight="700">FK</text>
+        <text x="420" y="164" fill="#d1d2d3" font-size="13">channel_id</text>
+        <text x="580" y="164" fill="#7b68ee" font-size="12" font-family="Courier New">uuid</text>
+        <text x="700" y="164" fill="#9ea0a5" font-size="12">→ channels.id</text>
+        <text x="420" y="192" fill="#d1d2d3" font-size="13">slack_user_id</text>
+        <text x="580" y="192" fill="#7b68ee" font-size="12" font-family="Courier New">text</text>
+        <text x="700" y="192" fill="#9ea0a5" font-size="12">SlackユーザーID</text>
+        <text x="420" y="220" fill="#d1d2d3" font-size="13">url</text>
+        <text x="580" y="220" fill="#7b68ee" font-size="12" font-family="Courier New">text</text>
+        <text x="700" y="220" fill="#9ea0a5" font-size="12">要約対象URL</text>
+        <text x="420" y="248" fill="#d1d2d3" font-size="13">title</text>
+        <text x="580" y="248" fill="#7b68ee" font-size="12" font-family="Courier New">text</text>
+        <text x="700" y="248" fill="#9ea0a5" font-size="12">記事タイトル</text>
+        <text x="420" y="276" fill="#d1d2d3" font-size="13">summary</text>
+        <text x="580" y="276" fill="#7b68ee" font-size="12" font-family="Courier New">text</text>
+        <text x="700" y="276" fill="#9ea0a5" font-size="12">要約結果</text>
+        <text x="420" y="304" fill="#d1d2d3" font-size="13">summary_level</text>
+        <text x="580" y="304" fill="#7b68ee" font-size="12" font-family="Courier New">text</text>
+        <text x="700" y="304" fill="#9ea0a5" font-size="12">簡単/普通/詳しく</text>
+        <text x="420" y="332" fill="#d1d2d3" font-size="13">llm_provider</text>
+        <text x="580" y="332" fill="#7b68ee" font-size="12" font-family="Courier New">text</text>
+        <text x="700" y="332" fill="#9ea0a5" font-size="12">anthropic/openai</text>
+        <text x="420" y="360" fill="#d1d2d3" font-size="13">created_at</text>
+        <text x="580" y="360" fill="#7b68ee" font-size="12" font-family="Courier New">timestamp</text>
+        <text x="700" y="360" fill="#9ea0a5" font-size="12">作成日時</text>
+
+        <!-- リレーション線 -->
+        <!-- workspaces → summaries -->
+        <line x1="260" y1="130" x2="380" y2="136" stroke="#4a9" stroke-width="2" stroke-dasharray="6,3"/>
+        <text x="310" y="122" fill="#4a9" font-size="11" text-anchor="middle">1 : N</text>
+
+        <!-- workspaces → channels -->
+        <line x1="140" y1="230" x2="140" y2="270" stroke="#4a9" stroke-width="2" stroke-dasharray="6,3"/>
+        <text x="158" y="255" fill="#4a9" font-size="11">1 : N</text>
+
+        <!-- channels → summaries -->
+        <line x1="260" y1="340" x2="380" y2="164" stroke="#e8912d" stroke-width="2" stroke-dasharray="6,3"/>
+        <text x="310" y="260" fill="#e8912d" font-size="11" text-anchor="middle">1 : N</text>
+    </svg>
+</div>
+
+<!-- ===== テーブル詳細 ===== -->
+<h2>テーブル詳細</h2>
+
+<!-- workspaces -->
+<h3 style="color:#4a9; font-size:16px; margin:24px 0 12px;">workspaces — ワークスペース情報</h3>
+<div class="table-card">
+    <div class="table-header secondary">
+        <span class="icon">🏢</span> workspaces
+    </div>
+    <div class="column-list">
+        <div class="column-row">
+            <span class="col-name">id <span class="col-badge badge-pk">PK</span></span>
+            <span class="col-type">uuid</span>
+            <span class="col-desc">主キー（自動生成）</span>
+        </div>
+        <div class="column-row">
+            <span class="col-name">team_id <span class="col-badge badge-nn">NOT NULL</span></span>
+            <span class="col-type">text</span>
+            <span class="col-desc">SlackワークスペースID（例: T01ABC123）</span>
+        </div>
+        <div class="column-row">
+            <span class="col-name">team_name</span>
+            <span class="col-type">text</span>
+            <span class="col-desc">ワークスペース名（例: My Team）</span>
+        </div>
+        <div class="column-row">
+            <span class="col-name">bot_token <span class="col-badge badge-nn">NOT NULL</span></span>
+            <span class="col-type">text</span>
+            <span class="col-desc">Bot User OAuth Token</span>
+        </div>
+        <div class="column-row">
+            <span class="col-name">created_at</span>
+            <span class="col-type">timestamp</span>
+            <span class="col-desc">作成日時（デフォルト: now()）</span>
+        </div>
+        <div class="column-row">
+            <span class="col-name">updated_at</span>
+            <span class="col-type">timestamp</span>
+            <span class="col-desc">更新日時（デフォルト: now()）</span>
+        </div>
+    </div>
+</div>
+
+<!-- channels -->
+<h3 style="color:#e8912d; font-size:16px; margin:24px 0 12px;">channels — チャンネル情報</h3>
+<div class="table-card">
+    <div class="table-header tertiary">
+        <span class="icon">💬</span> channels
+    </div>
+    <div class="column-list">
+        <div class="column-row">
+            <span class="col-name">id <span class="col-badge badge-pk">PK</span></span>
+            <span class="col-type">uuid</span>
+            <span class="col-desc">主キー（自動生成）</span>
+        </div>
+        <div class="column-row">
+            <span class="col-name">workspace_id <span class="col-badge badge-fk">FK</span></span>
+            <span class="col-type">uuid</span>
+            <span class="col-desc">→ workspaces.id</span>
+        </div>
+        <div class="column-row">
+            <span class="col-name">channel_id <span class="col-badge badge-nn">NOT NULL</span></span>
+            <span class="col-type">text</span>
+            <span class="col-desc">SlackチャンネルID（例: C01ABC123）</span>
+        </div>
+        <div class="column-row">
+            <span class="col-name">channel_name</span>
+            <span class="col-type">text</span>
+            <span class="col-desc">チャンネル名（例: #general）</span>
+        </div>
+    </div>
+</div>
+
+<!-- summaries -->
+<h3 style="color:#7b68ee; font-size:16px; margin:24px 0 12px;">summaries — 要約履歴</h3>
+<div class="table-card">
+    <div class="table-header primary">
+        <span class="icon">📝</span> summaries
+    </div>
+    <div class="column-list">
+        <div class="column-row">
+            <span class="col-name">id <span class="col-badge badge-pk">PK</span></span>
+            <span class="col-type">uuid</span>
+            <span class="col-desc">主キー（自動生成）</span>
+        </div>
+        <div class="column-row">
+            <span class="col-name">workspace_id <span class="col-badge badge-fk">FK</span></span>
+            <span class="col-type">uuid</span>
+            <span class="col-desc">→ workspaces.id</span>
+        </div>
+        <div class="column-row">
+            <span class="col-name">channel_id <span class="col-badge badge-fk">FK</span></span>
+            <span class="col-type">uuid</span>
+            <span class="col-desc">→ channels.id</span>
+        </div>
+        <div class="column-row">
+            <span class="col-name">slack_user_id <span class="col-badge badge-nn">NOT NULL</span></span>
+            <span class="col-type">text</span>
+            <span class="col-desc">SlackユーザーID（例: U01ABC123）</span>
+        </div>
+        <div class="column-row">
+            <span class="col-name">url <span class="col-badge badge-nn">NOT NULL</span></span>
+            <span class="col-type">text</span>
+            <span class="col-desc">要約対象のURL</span>
+        </div>
+        <div class="column-row">
+            <span class="col-name">title</span>
+            <span class="col-type">text</span>
+            <span class="col-desc">記事タイトル</span>
+        </div>
+        <div class="column-row">
+            <span class="col-name">summary <span class="col-badge badge-nn">NOT NULL</span></span>
+            <span class="col-type">text</span>
+            <span class="col-desc">要約結果</span>
+        </div>
+        <div class="column-row">
+            <span class="col-name">summary_level</span>
+            <span class="col-type">text</span>
+            <span class="col-desc">要約レベル（簡単 / 普通 / 詳しく）</span>
+        </div>
+        <div class="column-row">
+            <span class="col-name">llm_provider</span>
+            <span class="col-type">text</span>
+            <span class="col-desc">使用したLLM（anthropic / openai）</span>
+        </div>
+        <div class="column-row">
+            <span class="col-name">created_at</span>
+            <span class="col-type">timestamp</span>
+            <span class="col-desc">作成日時（デフォルト: now()）</span>
+        </div>
+    </div>
+</div>
+
+<!-- ===== リレーション説明 ===== -->
+<h2>リレーション</h2>
+
+<div class="relation-section">
+    <div class="relation-card">
+        <span class="relation-type">1 : N</span>
+        <span class="relation-arrow">→</span>
+        <div class="relation-text">
+            <strong>workspaces</strong> → <strong>channels</strong><br>
+            1つのワークスペースに複数のチャンネルが属する
+        </div>
+    </div>
+    <div class="relation-card">
+        <span class="relation-type">1 : N</span>
+        <span class="relation-arrow">→</span>
+        <div class="relation-text">
+            <strong>workspaces</strong> → <strong>summaries</strong><br>
+            1つのワークスペースで複数の要約が作成される
+        </div>
+    </div>
+    <div class="relation-card">
+        <span class="relation-type">1 : N</span>
+        <span class="relation-arrow">→</span>
+        <div class="relation-text">
+            <strong>channels</strong> → <strong>summaries</strong><br>
+            1つのチャンネルで複数の要約が作成される
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
