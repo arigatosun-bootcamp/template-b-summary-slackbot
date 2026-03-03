@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会話フロー図 — Summary Slackbot</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1d21;
+            color: #d1d2d3;
+            padding: 40px;
+        }
+        h1 {
+            color: #fff;
+            margin-bottom: 8px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #9ea0a5;
+            margin-bottom: 40px;
+            font-size: 14px;
+        }
+        .flow-section {
+            margin-bottom: 48px;
+        }
+        .flow-section h2 {
+            color: #fff;
+            font-size: 20px;
+            margin-bottom: 20px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #393b40;
+        }
+        .chat-container {
+            max-width: 700px;
+            background: #222529;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .message {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .message:last-child { margin-bottom: 0; }
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .avatar-user { background: #4a9; }
+        .avatar-bot { background: #7b68ee; }
+        .msg-content { flex: 1; }
+        .msg-name {
+            font-weight: 700;
+            font-size: 15px;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+        .msg-name span {
+            font-weight: 400;
+            font-size: 12px;
+            color: #9ea0a5;
+            margin-left: 8px;
+        }
+        .msg-text {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #d1d2d3;
+        }
+        .msg-text a {
+            color: #1d9bd1;
+            text-decoration: none;
+        }
+        .msg-text .loading {
+            color: #9ea0a5;
+            font-style: italic;
+        }
+        .msg-text .error {
+            color: #e8912d;
+        }
+        .msg-text ul {
+            margin: 8px 0 8px 20px;
+        }
+        .msg-text li {
+            margin-bottom: 4px;
+        }
+        .thread-indicator {
+            font-size: 12px;
+            color: #1d9bd1;
+            margin: 8px 0 16px 48px;
+            cursor: pointer;
+        }
+        .arrow {
+            text-align: center;
+            color: #9ea0a5;
+            font-size: 24px;
+            margin: 16px 0;
+        }
+        .flow-map {
+            max-width: 700px;
+            background: #222529;
+            border-radius: 8px;
+            padding: 24px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.8;
+            white-space: pre;
+            overflow-x: auto;
+            color: #d1d2d3;
+        }
+        .flow-map .node { color: #7b68ee; font-weight: bold; }
+        .flow-map .action { color: #4a9; }
+        .flow-map .error-node { color: #e8912d; }
+        .legend {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <h1>会話フロー図 — Summary Slackbot</h1>
+    <p class="subtitle">Slack Bot型のため、画面遷移ではなくBotとの会話フローを図示する</p>
+
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-dot" style="background:#4a9"></div>
+            ユーザーメッセージ
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background:#7b68ee"></div>
+            Bot返信
+        </div>
+        <div class="legend-item">
+            <div class="legend-dot" style="background:#e8912d"></div>
+            エラー返信
+        </div>
+    </div>
+
+    <!-- フロー1: 記事要約 -->
+    <div class="flow-section">
+        <h2>フロー1: 記事要約（正常系）</h2>
+        <div class="chat-container">
+            <div class="message">
+                <div class="avatar avatar-user">👤</div>
+                <div class="msg-content">
+                    <div class="msg-name">ユーザー <span>10:00</span></div>
+                    <div class="msg-text"><a>@SummaryBot</a> <a>https://example.com/article</a></div>
+                </div>
+            </div>
+            <div class="thread-indicator">↳ スレッドに返信</div>
+            <div class="message">
+                <div class="avatar avatar-bot">🤖</div>
+                <div class="msg-content">
+                    <div class="msg-name">SummaryBot <span>10:00</span></div>
+                    <div class="msg-text"><span class="loading">要約を生成中です...</span></div>
+                </div>
+            </div>
+            <div class="arrow">↓</div>
+            <div class="message">
+                <div class="avatar avatar-bot">🤖</div>
+                <div class="msg-content">
+                    <div class="msg-name">SummaryBot <span>10:00</span></div>
+                    <div class="msg-text">
+                        📝 <strong>AI技術の最新トレンド2026</strong>
+                        <ul>
+                            <li>マルチモーダルAIの進化により画像・音声・テキストの統合処理が標準化</li>
+                            <li>エッジAIの普及でリアルタイム処理が可能に</li>
+                            <li>AI規制法の施行により透明性と説明可能性が必須要件に</li>
+                            <li>オープンソースLLMの性能向上で選択肢が拡大</li>
+                            <li>AIエージェントの実用化が加速</li>
+                        </ul>
+                        🔗 元記事: <a>https://example.com/article</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- フロー2: 要約レベル指定 -->
+    <div class="flow-section">
+        <h2>フロー2: 要約レベル指定</h2>
+        <div class="chat-container">
+            <div class="message">
+                <div class="avatar avatar-user">👤</div>
+                <div class="msg-content">
+                    <div class="msg-name">ユーザー <span>10:05</span></div>
+                    <div class="msg-text"><a>@SummaryBot</a> <a>https://example.com/article</a> <strong>簡単</strong></div>
+                </div>
+            </div>
+            <div class="thread-indicator">↳ スレッドに返信</div>
+            <div class="message">
+                <div class="avatar avatar-bot">🤖</div>
+                <div class="msg-content">
+                    <div class="msg-name">SummaryBot <span>10:05</span></div>
+                    <div class="msg-text">
+                        📝 <strong>AI技術の最新トレンド2026</strong>
+                        <ul>
+                            <li>マルチモーダルAIとエッジAIが主流に</li>
+                            <li>AI規制法の施行で透明性が必須に</li>
+                            <li>AIエージェントの実用化が加速中</li>
+                        </ul>
+                        🔗 元記事: <a>https://example.com/article</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- フロー3: 重複URL確認 -->
+    <div class="flow-section">
+        <h2>フロー3: 重複URL確認</h2>
+        <div class="chat-container">
+            <div class="message">
+                <div class="avatar avatar-user">👤</div>
+                <div class="msg-content">
+                    <div class="msg-name">ユーザー <span>10:10</span></div>
+                    <div class="msg-text"><a>@SummaryBot</a> <a>https://example.com/article</a></div>
+                </div>
+            </div>
+            <div class="thread-indicator">↳ スレッドに返信</div>
+            <div class="message">
+                <div class="avatar avatar-bot">🤖</div>
+                <div class="msg-content">
+                    <div class="msg-name">SummaryBot <span>10:10</span></div>
+                    <div class="msg-text">このURLは過去に要約済みです。再要約しますか？</div>
+                </div>
+            </div>
+            <div class="message">
+                <div class="avatar avatar-user">👤</div>
+                <div class="msg-content">
+                    <div class="msg-name">ユーザー <span>10:10</span></div>
+                    <div class="msg-text">いいえ</div>
+                </div>
+            </div>
+            <div class="message">
+                <div class="avatar avatar-bot">🤖</div>
+                <div class="msg-content">
+                    <div class="msg-name">SummaryBot <span>10:10</span></div>
+                    <div class="msg-text">
+                        📝 <strong>AI技術の最新トレンド2026</strong>（前回の要約）
+                        <ul>
+                            <li>マルチモーダルAIの進化により統合処理が標準化</li>
+                            <li>エッジAIの普及でリアルタイム処理が可能に</li>
+                            <li>AI規制法の施行により透明性が必須要件に</li>
+                            <li>オープンソースLLMの性能向上で選択肢が拡大</li>
+                            <li>AIエージェントの実用化が加速</li>
+                        </ul>
+                        🔗 元記事: <a>https://example.com/article</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- フロー4: 履歴表示 -->
+    <div class="flow-section">
+        <h2>フロー4: 履歴表示</h2>
+        <div class="chat-container">
+            <div class="message">
+                <div class="avatar avatar-user">👤</div>
+                <div class="msg-content">
+                    <div class="msg-name">ユーザー <span>10:15</span></div>
+                    <div class="msg-text"><a>@SummaryBot</a> 履歴</div>
+                </div>
+            </div>
+            <div class="thread-indicator">↳ スレッドに返信</div>
+            <div class="message">
+                <div class="avatar avatar-bot">🤖</div>
+                <div class="msg-content">
+                    <div class="msg-name">SummaryBot <span>10:15</span></div>
+                    <div class="msg-text">
+                        📋 <strong>要約履歴（最新5件）</strong>
+                        <br><br>
+                        1. AI技術の最新トレンド2026（2026-03-03）<br>
+                        2. Pythonで始めるWebスクレイピング（2026-03-02）<br>
+                        3. Slack Botの作り方入門（2026-03-01）<br>
+                        4. Vercelデプロイ完全ガイド（2026-02-28）<br>
+                        5. Supabase入門チュートリアル（2026-02-27）<br>
+                        <br>
+                        読みたいタイトルの番号を教えてください。
+                    </div>
+                </div>
+            </div>
+            <div class="message">
+                <div class="avatar avatar-user">👤</div>
+                <div class="msg-content">
+                    <div class="msg-name">ユーザー <span>10:15</span></div>
+                    <div class="msg-text">3</div>
+                </div>
+            </div>
+            <div class="message">
+                <div class="avatar avatar-bot">🤖</div>
+                <div class="msg-content">
+                    <div class="msg-name">SummaryBot <span>10:15</span></div>
+                    <div class="msg-text">
+                        📝 <strong>Slack Botの作り方入門</strong>
+                        <ul>
+                            <li>Slack APIでBotトークンを取得する方法</li>
+                            <li>Bolt for Pythonでイベントを受信する手順</li>
+                            <li>メンションに反応するBotの基本構造</li>
+                            <li>Vercelにデプロイしてスラッシュコマンドを動かす方法</li>
+                        </ul>
+                        🔗 元記事: <a>https://example.com/slack-bot-tutorial</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- フロー5: エラー系 -->
+    <div class="flow-section">
+        <h2>フロー5: エラー系</h2>
+        <div class="chat-container">
+            <div class="message">
+                <div class="avatar avatar-user">👤</div>
+                <div class="msg-content">
+                    <div class="msg-name">ユーザー <span>10:20</span></div>
+                    <div class="msg-text"><a>@SummaryBot</a> こんにちは</div>
+                </div>
+            </div>
+            <div class="thread-indicator">↳ スレッドに返信</div>
+            <div class="message">
+                <div class="avatar avatar-bot">🤖</div>
+                <div class="msg-content">
+                    <div class="msg-name">SummaryBot <span>10:20</span></div>
+                    <div class="msg-text"><span class="error">URLを追加してください</span></div>
+                </div>
+            </div>
+        </div>
+        <br>
+        <div class="chat-container">
+            <div class="message">
+                <div class="avatar avatar-user">👤</div>
+                <div class="msg-content">
+                    <div class="msg-name">ユーザー <span>10:21</span></div>
+                    <div class="msg-text"><a>@SummaryBot</a> <a>https://example.com/not-exist</a></div>
+                </div>
+            </div>
+            <div class="thread-indicator">↳ スレッドに返信</div>
+            <div class="message">
+                <div class="avatar avatar-bot">🤖</div>
+                <div class="msg-content">
+                    <div class="msg-name">SummaryBot <span>10:21</span></div>
+                    <div class="msg-text"><span class="loading">要約を生成中です...</span></div>
+                </div>
+            </div>
+            <div class="arrow">↓</div>
+            <div class="message">
+                <div class="avatar avatar-bot">🤖</div>
+                <div class="msg-content">
+                    <div class="msg-name">SummaryBot <span>10:21</span></div>
+                    <div class="msg-text"><span class="error">このページは存在しません</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 全体マップ -->
+    <div class="flow-section">
+        <h2>フロー全体マップ</h2>
+        <div class="flow-map"><span class="node">@bot メンション受信</span>
+    │
+    ├── <span class="action">URLあり</span>
+    │     ├── 要約済み？ → はい → 「再要約しますか？」
+    │     │                         ├── はい → <span class="action">要約実行</span>
+    │     │                         └── いいえ → 過去の要約表示
+    │     └── 未要約 → <span class="action">要約実行</span>
+    │           ├── 成功 → 要約結果をスレッド返信 → 履歴保存
+    │           └── 失敗 → <span class="error-node">エラーメッセージ返信</span>
+    │
+    ├── <span class="action">「履歴」</span>
+    │     ├── 履歴あり → 最新5件表示 → 番号指定 → 詳細表示
+    │     └── 履歴なし → 「まだ要約履歴がありません」
+    │
+    ├── <span class="error-node">URLなし・その他</span>
+    │     └── 「URLを追加してください」
+    │
+    └── Bot自身の投稿 → <span class="action">無視</span></div>
+    </div>
+
+</body>
+</html>
