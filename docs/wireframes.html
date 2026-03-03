@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ワイヤーフレーム — Summary Slackbot</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1d21;
+            color: #d1d2d3;
+            padding: 40px;
+        }
+        h1 { color: #fff; margin-bottom: 8px; font-size: 28px; }
+        .subtitle { color: #9ea0a5; margin-bottom: 40px; font-size: 14px; }
+        h2 {
+            color: #fff; font-size: 20px; margin: 48px 0 20px;
+            padding-bottom: 8px; border-bottom: 1px solid #393b40;
+        }
+        h3 { color: #b9bbbe; font-size: 14px; margin: 24px 0 12px; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* Slack風コンテナ */
+        .slack-window {
+            max-width: 760px;
+            background: #1a1d21;
+            border: 1px solid #393b40;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 32px;
+        }
+        .slack-header {
+            background: #222529;
+            padding: 12px 16px;
+            border-bottom: 1px solid #393b40;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .slack-header .channel-name {
+            font-weight: 700;
+            color: #fff;
+            font-size: 15px;
+        }
+        .slack-header .channel-hash {
+            color: #9ea0a5;
+            font-size: 16px;
+        }
+        .slack-body {
+            padding: 16px;
+        }
+
+        /* メッセージ */
+        .message {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 4px;
+            padding: 4px 0;
+        }
+        .message:hover { background: rgba(255,255,255,0.02); }
+        .message.grouped { padding-left: 48px; }
+        .avatar {
+            width: 36px; height: 36px; border-radius: 4px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; flex-shrink: 0;
+        }
+        .avatar-user { background: #4a9; }
+        .avatar-bot { background: #7b68ee; }
+        .msg-content { flex: 1; min-width: 0; }
+        .msg-header {
+            display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px;
+        }
+        .msg-name { font-weight: 700; font-size: 15px; color: #fff; }
+        .msg-badge {
+            background: #9ea0a5; color: #1a1d21; font-size: 10px;
+            padding: 1px 4px; border-radius: 3px; font-weight: 700;
+        }
+        .msg-time { font-size: 12px; color: #9ea0a5; }
+        .msg-text { font-size: 15px; line-height: 1.6; color: #d1d2d3; }
+        .msg-text a { color: #1d9bd1; text-decoration: none; }
+        .msg-text strong { color: #fff; }
+        .msg-text .mention { color: #1d9bd1; background: rgba(29,155,209,0.1); padding: 0 2px; border-radius: 3px; }
+        .msg-text ul { margin: 8px 0 8px 20px; }
+        .msg-text li { margin-bottom: 4px; }
+
+        /* スレッドインジケータ */
+        .thread-bar {
+            margin: 8px 0 8px 18px;
+            padding: 8px 12px;
+            border-left: 2px solid #7b68ee;
+            background: rgba(123,104,238,0.05);
+            border-radius: 0 4px 4px 0;
+            font-size: 13px;
+            color: #1d9bd1;
+            cursor: pointer;
+        }
+
+        /* Bot特有のスタイル */
+        .loading-msg { color: #9ea0a5; font-style: italic; }
+        .error-msg { color: #e8912d; }
+        .success-msg { color: #4a9; }
+
+        /* 区切り線（Slack風） */
+        .divider {
+            display: flex; align-items: center; gap: 12px;
+            margin: 20px 0; color: #9ea0a5; font-size: 12px;
+        }
+        .divider::before, .divider::after {
+            content: ''; flex: 1; height: 1px; background: #393b40;
+        }
+
+        /* 注釈 */
+        .annotation {
+            max-width: 760px;
+            background: #2c2f33;
+            border-left: 3px solid #7b68ee;
+            padding: 12px 16px;
+            margin: -16px 0 32px;
+            border-radius: 0 4px 4px 0;
+            font-size: 13px;
+            color: #b9bbbe;
+        }
+        .annotation strong { color: #7b68ee; }
+
+        /* リアクション */
+        .reactions {
+            display: flex; gap: 6px; margin-top: 6px;
+        }
+        .reaction {
+            background: rgba(29,155,209,0.1);
+            border: 1px solid rgba(29,155,209,0.3);
+            border-radius: 12px;
+            padding: 2px 8px;
+            font-size: 12px;
+            color: #1d9bd1;
+        }
+    </style>
+</head>
+<body>
+
+<h1>ワイヤーフレーム — Summary Slackbot</h1>
+<p class="subtitle">Slack上でのBotメッセージの見た目・レイアウト定義</p>
+
+<!-- ===== W-01: 要約結果メッセージ ===== -->
+<h2>W-01: 要約結果メッセージ</h2>
+<h3>普通レベル（デフォルト）</h3>
+
+<div class="slack-window">
+    <div class="slack-header">
+        <span class="channel-hash">#</span>
+        <span class="channel-name">general</span>
+    </div>
+    <div class="slack-body">
+        <div class="message">
+            <div class="avatar avatar-user">👤</div>
+            <div class="msg-content">
+                <div class="msg-header">
+                    <span class="msg-name">田中太郎</span>
+                    <span class="msg-time">10:00 AM</span>
+                </div>
+                <div class="msg-text">
+                    <span class="mention">@SummaryBot</span> <a>https://example.com/ai-trends-2026</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="thread-bar">🧵 1件の返信</div>
+
+        <div class="message">
+            <div class="avatar avatar-bot">🤖</div>
+            <div class="msg-content">
+                <div class="msg-header">
+                    <span class="msg-name">SummaryBot</span>
+                    <span class="msg-badge">APP</span>
+                    <span class="msg-time">10:00 AM</span>
+                </div>
+                <div class="msg-text">
+                    📝 <strong>AI技術の最新トレンド2026 — 知っておくべき5つのポイント</strong>
+                    <ul>
+                        <li>マルチモーダルAIの進化により、画像・音声・テキストの統合処理が標準化された</li>
+                        <li>エッジAIの普及でデバイス上でのリアルタイム処理が可能に</li>
+                        <li>EU AI規制法の施行により、透明性と説明可能性が必須要件になった</li>
+                        <li>オープンソースLLMの性能がGPT-4レベルに追いつき選択肢が拡大</li>
+                        <li>AIエージェントが複雑なタスクを自律的にこなす実用段階に突入</li>
+                    </ul>
+                    🔗 元記事: <a>https://example.com/ai-trends-2026</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="annotation">
+    <strong>フォーマット仕様:</strong> 📝 + 太字タイトル → 箇条書きポイント → 🔗 元記事URL。普通レベルは5〜8行。
+</div>
+
+<!-- ===== W-02: 簡単レベル ===== -->
+<h3>簡単レベル</h3>
+
+<div class="slack-window">
+    <div class="slack-header">
+        <span class="channel-hash">#</span>
+        <span class="channel-name">general</span>
+    </div>
+    <div class="slack-body">
+        <div class="message">
+            <div class="avatar avatar-user">👤</div>
+            <div class="msg-content">
+                <div class="msg-header">
+                    <span class="msg-name">田中太郎</span>
+                    <span class="msg-time">10:05 AM</span>
+                </div>
+                <div class="msg-text">
+                    <span class="mention">@SummaryBot</span> <a>https://example.com/ai-trends-2026</a> 簡単
+                </div>
+            </div>
+        </div>
+
+        <div class="thread-bar">🧵 1件の返信</div>
+
+        <div class="message">
+            <div class="avatar avatar-bot">🤖</div>
+            <div class="msg-content">
+                <div class="msg-header">
+                    <span class="msg-name">SummaryBot</span>
+                    <span class="msg-badge">APP</span>
+                    <span class="msg-time">10:05 AM</span>
+                </div>
+                <div class="msg-text">
+                    📝 <strong>AI技術の最新トレンド2026</strong>
+                    <ul>
+                        <li>マルチモーダルAIとエッジAIが主流に</li>
+                        <li>AI規制法の施行で透明性が必須に</li>
+                        <li>AIエージェントの実用化が加速中</li>
+                    </ul>
+                    🔗 元記事: <a>https://example.com/ai-trends-2026</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="annotation">
+    <strong>フォーマット仕様:</strong> 簡単レベルは3行程度。要点のみ簡潔に。
+</div>
+
+<!-- ===== W-03: 詳しくレベル ===== -->
+<h3>詳しくレベル</h3>
+
+<div class="slack-window">
+    <div class="slack-header">
+        <span class="channel-hash">#</span>
+        <span class="channel-name">general</span>
+    </div>
+    <div class="slack-body">
+        <div class="message">
+            <div class="avatar avatar-user">👤</div>
+            <div class="msg-content">
+                <div class="msg-header">
+                    <span class="msg-name">田中太郎</span>
+                    <span class="msg-time">10:10 AM</span>
+                </div>
+                <div class="msg-text">
+                    <span class="mention">@SummaryBot</span> <a>https://example.com/ai-trends-2026</a> 詳しく
+                </div>
+            </div>
+        </div>
+
+        <div class="thread-bar">🧵 1件の返信</div>
+
+        <div class="message">
+            <div class="avatar avatar-bot">🤖</div>
+            <div class="msg-content">
+                <div class="msg-header">
+                    <span class="msg-name">SummaryBot</span>
+                    <span class="msg-badge">APP</span>
+                    <span class="msg-time">10:10 AM</span>
+                </div>
+                <div class="msg-text">
+                    📝 <strong>AI技術の最新トレンド2026 — 知っておくべき5つのポイント</strong>
+                    <br><br>
+                    <strong>1. マルチモーダルAIの標準化</strong><br>
+                    画像・音声・テキストを統合的に処理するマルチモーダルAIが標準化。GPT-5やClaude 4はすべてマルチモーダル対応となり、単一モダリティ専用モデルは減少傾向にある。
+                    <br><br>
+                    <strong>2. エッジAIの普及</strong><br>
+                    スマートフォンやIoTデバイス上でAI推論を実行するエッジAIが普及。クラウドに依存せずリアルタイム処理が可能になり、プライバシー保護にも貢献している。
+                    <br><br>
+                    <strong>3. AI規制法の本格施行</strong><br>
+                    EUのAI規制法が本格施行され、高リスクAIシステムには透明性・説明可能性・人間による監視が義務化された。日本でも類似の規制整備が進行中。
+                    <br><br>
+                    <strong>4. オープンソースLLMの躍進</strong><br>
+                    Meta LlamaやMistralなどのオープンソースLLMがGPT-4レベルの性能を達成。企業がプライベートなLLMを構築する選択肢が拡大した。
+                    <br><br>
+                    <strong>5. AIエージェントの実用化</strong><br>
+                    複数のツールを自律的に使い分け、複雑なタスクを完遂するAIエージェントが実用段階に突入。コーディング・リサーチ・カスタマーサポートなどの分野で導入が進む。
+                    <br><br>
+                    🔗 元記事: <a>https://example.com/ai-trends-2026</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="annotation">
+    <strong>フォーマット仕様:</strong> 詳しくレベルは15行程度。見出し付きで各ポイントを詳細に解説。
+</div>
+
+<!-- ===== W-04: 処理中メッセージ ===== -->
+<h2>W-02: 処理中メッセージ</h2>
+
+<div class="slack-window">
+    <div class="slack-header">
+        <span class="channel-hash">#</span>
+        <span class="channel-name">general</span>
+    </div>
+    <div class="slack-body">
+        <div class="message">
+            <div class="avatar avatar-bot">🤖</div>
+            <div class="msg-content">
+                <div class="msg-header">
+                    <span class="msg-name">SummaryBot</span>
+                    <span class="msg-badge">APP</span>
+                    <span class="msg-time">10:15 AM</span>
+                </div>
+                <div class="msg-text">
+                    <span class="loading-msg">⏳ 要約を生成中です...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="annotation">
+    <strong>仕様:</strong> URL受信後に即座に表示。要約完了後、新しいメッセージで結果を投稿する。
+</div>
+
+<h3>応答遅延時（30秒以上）</h3>
+<div class="slack-window">
+    <div class="slack-header">
+        <span class="channel-hash">#</span>
+        <span class="channel-name">general</span>
+    </div>
+    <div class="slack-body">
+        <div class="message">
+            <div class="avatar avatar-bot">🤖</div>
+            <div class="msg-content">
+                <div class="msg-header">
+                    <span class="msg-name">SummaryBot</span>
+                    <span class="msg-badge">APP</span>
+                    <span class="msg-time">10:15 AM</span>
+                </div>
+                <div class="msg-text">
+                    <span class="loading-msg">⏳ 生成に時間がかかっています。もう少しお待ちください...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== W-05: 履歴一覧 ===== -->
+<h2>W-03: 履歴一覧メッセージ</h2>
+
+<div class="slack-window">
+    <div class="slack-header">
+        <span class="channel-hash">#</span>
+        <span class="channel-name">general</span>
+    </div>
+    <div class="slack-body">
+        <div class="message">
+            <div class="avatar avatar-user">👤</div>
+            <div class="msg-content">
+                <div class="msg-header">
+                    <span class="msg-name">田中太郎</span>
+                    <span class="msg-time">10:20 AM</span>
+                </div>
+                <div class="msg-text">
+                    <span class="mention">@SummaryBot</span> 履歴
+                </div>
+            </div>
+        </div>
+
+        <div class="thread-bar">🧵 1件の返信</div>
+
+        <div class="message">
+            <div class="avatar avatar-bot">🤖</div>
+            <div class="msg-content">
+                <div class="msg-header">
+                    <span class="msg-name">SummaryBot</span>
+                    <span class="msg-badge">APP</span>
+                    <span class="msg-time">10:20 AM</span>
+                </div>
+                <div class="msg-text">
+                    📋 <strong>要約履歴（最新5件）</strong>
+                    <br><br>
+                    1️⃣ AI技術の最新トレンド2026（2026-03-03）<br>
+                    2️⃣ Pythonで始めるWebスクレイピング（2026-03-02）<br>
+                    3️⃣ Slack Botの作り方入門（2026-03-01）<br>
+                    4️⃣ Vercelデプロイ完全ガイド（2026-02-28）<br>
+                    5️⃣ Supabase入門チュートリアル（2026-02-27）<br>
+                    <br>
+                    読みたいタイトルの番号を教えてください。
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="annotation">
+    <strong>フォーマット仕様:</strong> 📋 + 太字見出し → 番号付きリスト（最新5件）→ 操作案内。番号絵文字で視認性を向上。
+</div>
+
+<!-- ===== W-06: 履歴0件 ===== -->
+<h3>履歴が0件の場合</h3>
+
+<div class="slack-window">
+    <div class="slack-header">
+        <span class="channel-hash">#</span>
+        <span class="channel-name">general</span>
+    </div>
+    <div class="slack-body">
+        <div class="message">
+            <div class="avatar avatar-bot">🤖</div>
+            <div class="msg-content">
+                <div class="msg-header">
+                    <span class="msg-name">SummaryBot</span>
+                    <span class="msg-badge">APP</span>
+                    <span class="msg-time">10:25 AM</span>
+                </div>
+                <div class="msg-text">
+                    📋 まだ要約履歴がありません。<br>
+                    <span class="mention">@SummaryBot</span> URL で記事を要約してみましょう！
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== W-07: 重複URL確認 ===== -->
+<h2>W-04: 重複URL確認メッセージ</h2>
+
+<div class="slack-window">
+    <div class="slack-header">
+        <span class="channel-hash">#</span>
+        <span class="channel-name">general</span>
+    </div>
+    <div class="slack-body">
+        <div class="message">
+            <div class="avatar avatar-bot">🤖</div>
+            <div class="msg-content">
+                <div class="msg-header">
+                    <span class="msg-name">SummaryBot</span>
+                    <span class="msg-badge">APP</span>
+                    <span class="msg-time">10:30 AM</span>
+                </div>
+                <div class="msg-text">
+                    🔄 このURLは <strong>2026-03-01</strong> に要約済みです。<br><br>
+                    再要約しますか？「はい」または「いいえ」で答えてください。
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="annotation">
+    <strong>仕様:</strong> 過去の要約日時を表示。「はい」で再要約、「いいえ」で過去の要約を再表示。
+</div>
+
+<!-- ===== W-08: エラーメッセージ ===== -->
+<h2>W-05: エラーメッセージ</h2>
+
+<h3>URLなし</h3>
+<div class="slack-window">
+    <div class="slack-header">
+        <span class="channel-hash">#</span>
+        <span class="channel-name">general</span>
+    </div>
+    <div class="slack-body">
+        <div class="message">
+            <div class="avatar avatar-bot">🤖</div>
+            <div class="msg-content">
+                <div class="msg-header">
+                    <span class="msg-name">SummaryBot</span>
+                    <span class="msg-badge">APP</span>
+                    <span class="msg-time">10:35 AM</span>
+                </div>
+                <div class="msg-text">
+                    <span class="error-msg">⚠️ URLを追加してください。</span><br>
+                    <br>
+                    使い方: <span class="mention">@SummaryBot</span> URL [簡単 / 詳しく]
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h3>存在しないURL</h3>
+<div class="slack-window">
+    <div class="slack-header">
+        <span class="channel-hash">#</span>
+        <span class="channel-name">general</span>
+    </div>
+    <div class="slack-body">
+        <div class="message">
+            <div class="avatar avatar-bot">🤖</div>
+            <div class="msg-content">
+                <div class="msg-header">
+                    <span class="msg-name">SummaryBot</span>
+                    <span class="msg-badge">APP</span>
+                    <span class="msg-time">10:36 AM</span>
+                </div>
+                <div class="msg-text">
+                    <span class="error-msg">❌ このページは存在しません。</span><br>
+                    URLを確認してもう一度お試しください。
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h3>スクレイピング失敗</h3>
+<div class="slack-window">
+    <div class="slack-header">
+        <span class="channel-hash">#</span>
+        <span class="channel-name">general</span>
+    </div>
+    <div class="slack-body">
+        <div class="message">
+            <div class="avatar avatar-bot">🤖</div>
+            <div class="msg-content">
+                <div class="msg-header">
+                    <span class="msg-name">SummaryBot</span>
+                    <span class="msg-badge">APP</span>
+                    <span class="msg-time">10:37 AM</span>
+                </div>
+                <div class="msg-text">
+                    <span class="error-msg">❌ このURLの内容を取得できませんでした。</span><br>
+                    アクセス制限のあるサイトの可能性があります。
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h3>LLM APIエラー</h3>
+<div class="slack-window">
+    <div class="slack-header">
+        <span class="channel-hash">#</span>
+        <span class="channel-name">general</span>
+    </div>
+    <div class="slack-body">
+        <div class="message">
+            <div class="avatar avatar-bot">🤖</div>
+            <div class="msg-content">
+                <div class="msg-header">
+                    <span class="msg-name">SummaryBot</span>
+                    <span class="msg-badge">APP</span>
+                    <span class="msg-time">10:38 AM</span>
+                </div>
+                <div class="msg-text">
+                    <span class="error-msg">❌ 要約の生成に失敗しました。</span><br>
+                    もう一度お試しください。問題が続く場合は管理者にお問い合わせください。
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== W-09: DM ===== -->
+<h2>W-06: DM（ダイレクトメッセージ）での表示</h2>
+
+<div class="slack-window">
+    <div class="slack-header">
+        <span class="channel-name">🤖 SummaryBot</span>
+    </div>
+    <div class="slack-body">
+        <div class="message">
+            <div class="avatar avatar-user">👤</div>
+            <div class="msg-content">
+                <div class="msg-header">
+                    <span class="msg-name">田中太郎</span>
+                    <span class="msg-time">11:00 AM</span>
+                </div>
+                <div class="msg-text">
+                    <a>https://example.com/python-scraping</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="message">
+            <div class="avatar avatar-bot">🤖</div>
+            <div class="msg-content">
+                <div class="msg-header">
+                    <span class="msg-name">SummaryBot</span>
+                    <span class="msg-badge">APP</span>
+                    <span class="msg-time">11:00 AM</span>
+                </div>
+                <div class="msg-text">
+                    📝 <strong>Pythonで始めるWebスクレイピング入門</strong>
+                    <ul>
+                        <li>requestsとBeautifulSoupの基本的な使い方</li>
+                        <li>HTMLの構造を理解してデータを抽出する方法</li>
+                        <li>robots.txtを確認してマナーを守るスクレイピング</li>
+                        <li>取得したデータをCSVに保存する実践例</li>
+                        <li>よくあるエラーと対処法まとめ</li>
+                    </ul>
+                    🔗 元記事: <a>https://example.com/python-scraping</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="annotation">
+    <strong>DM仕様:</strong> DMの場合はメンション不要。URLを送るだけで要約される。スレッドではなく直接返信。
+</div>
+
+</body>
+</html>
