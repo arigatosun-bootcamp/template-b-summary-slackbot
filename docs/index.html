@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>設計書一覧 — Summary Slackbot</title>
+<style>
+  :root {
+    --primary: #2196f3;
+    --primary-dark: #1565c0;
+    --green: #4caf50;
+    --orange: #ff9800;
+    --purple: #9c27b0;
+    --red: #f44336;
+    --bg: #f5f7fa;
+    --card-bg: #ffffff;
+    --text: #333;
+    --text-muted: #888;
+    --border: #e8ecf1;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+
+  /* Hero */
+  .hero {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: white; padding: 48px 24px; text-align: center;
+  }
+  .hero h1 { font-size: 32px; margin-bottom: 8px; }
+  .hero p { color: rgba(255,255,255,0.7); font-size: 16px; }
+  .hero-badges { display: flex; justify-content: center; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+  .hero-badge {
+    background: rgba(255,255,255,0.15); padding: 6px 16px; border-radius: 20px;
+    font-size: 13px; color: rgba(255,255,255,0.9);
+  }
+
+  /* Architecture */
+  .architecture {
+    max-width: 900px; margin: -32px auto 0; padding: 0 24px; position: relative; z-index: 1;
+  }
+  .arch-card {
+    background: var(--card-bg); border-radius: 16px; padding: 32px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+  }
+  .arch-card h2 { font-size: 18px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .arch-flow {
+    display: flex; align-items: center; justify-content: center; gap: 0;
+    flex-wrap: wrap; padding: 16px 0;
+  }
+  .arch-box {
+    padding: 14px 20px; border-radius: 12px; text-align: center;
+    font-size: 13px; font-weight: 600; min-width: 140px;
+  }
+  .arch-arrow { font-size: 24px; color: #ccc; padding: 0 8px; }
+  .arch-fe { background: #e3f2fd; color: #1565c0; border: 2px solid #90caf9; }
+  .arch-be { background: #fff3e0; color: #e65100; border: 2px solid #ffcc80; }
+  .arch-db { background: #e8f5e9; color: #2e7d32; border: 2px solid #a5d6a7; }
+  .arch-slack { background: #f3e5f5; color: #6a1b9a; border: 2px solid #ce93d8; }
+  .arch-sub { font-weight: 400; font-size: 11px; display: block; margin-top: 4px; opacity: 0.8; }
+
+  /* Stats */
+  .stats {
+    max-width: 900px; margin: 24px auto; padding: 0 24px;
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+  }
+  .stat-card {
+    background: var(--card-bg); border-radius: 12px; padding: 20px; text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-top: 3px solid var(--primary);
+  }
+  .stat-number { font-size: 32px; font-weight: 800; color: var(--primary); }
+  .stat-label { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+  /* Documents Grid */
+  .docs-section { max-width: 900px; margin: 32px auto; padding: 0 24px; }
+  .docs-section h2 { font-size: 20px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .docs-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  .doc-card {
+    background: var(--card-bg); border-radius: 12px; padding: 20px 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04); display: flex; align-items: flex-start; gap: 16px;
+    border-left: 4px solid var(--primary); transition: transform 0.15s, box-shadow 0.15s;
+    text-decoration: none; color: inherit; cursor: pointer;
+  }
+  .doc-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+  .doc-icon {
+    width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center;
+    justify-content: center; font-size: 24px; flex-shrink: 0;
+  }
+  .doc-content { flex: 1; }
+  .doc-num { font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.5px; }
+  .doc-title { font-size: 16px; font-weight: 700; margin: 2px 0 6px; }
+  .doc-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+  .doc-tags { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .doc-tag {
+    padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: 600;
+  }
+  .tag-md { background: #e3f2fd; color: #1565c0; }
+  .tag-html { background: #fff3e0; color: #e65100; }
+  .tag-sql { background: #e8f5e9; color: #2e7d32; }
+  .doc-file { font-size: 12px; color: var(--primary); margin-top: 6px; font-family: monospace; }
+
+  /* Feature List */
+  .features {
+    max-width: 900px; margin: 32px auto; padding: 0 24px;
+  }
+  .features h2 { font-size: 20px; margin-bottom: 16px; }
+  .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+  .feature-card {
+    background: var(--card-bg); border-radius: 12px; padding: 16px 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .feature-card h4 { font-size: 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .feature-card p { font-size: 13px; color: var(--text-muted); }
+
+  /* Schedule */
+  .schedule { max-width: 900px; margin: 32px auto; padding: 0 24px; }
+  .schedule h2 { font-size: 20px; margin-bottom: 16px; }
+  .timeline { position: relative; padding-left: 32px; }
+  .timeline::before {
+    content: ''; position: absolute; left: 11px; top: 8px; bottom: 8px;
+    width: 2px; background: #e0e0e0;
+  }
+  .timeline-item { position: relative; margin-bottom: 16px; }
+  .timeline-dot {
+    position: absolute; left: -32px; top: 4px; width: 22px; height: 22px;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: white;
+  }
+  .timeline-item .content {
+    background: var(--card-bg); border-radius: 10px; padding: 14px 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .timeline-item .day { font-weight: 700; font-size: 14px; }
+  .timeline-item .goal { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+  /* Tech Stack */
+  .tech { max-width: 900px; margin: 32px auto; padding: 0 24px; }
+  .tech h2 { font-size: 20px; margin-bottom: 16px; }
+  .tech-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+  .tech-card {
+    background: var(--card-bg); border-radius: 12px; padding: 16px; text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .tech-card .tech-name { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+  .tech-card .tech-use { font-size: 12px; color: var(--text-muted); }
+
+  /* Logic Gate */
+  .logic-gate { max-width: 900px; margin: 32px auto; padding: 0 24px; }
+  .logic-gate h2 { font-size: 20px; margin-bottom: 16px; }
+  .lg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .lg-card {
+    background: var(--card-bg); border-radius: 12px; padding: 16px 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-top: 3px solid var(--green);
+  }
+  .lg-card h4 { font-size: 14px; margin-bottom: 4px; }
+  .lg-card p { font-size: 12px; color: var(--text-muted); }
+  .lg-card .lg-count { font-size: 24px; font-weight: 800; color: var(--green); margin-top: 8px; }
+
+  /* Footer */
+  .footer {
+    max-width: 900px; margin: 48px auto 24px; padding: 24px; text-align: center;
+    color: var(--text-muted); font-size: 13px; border-top: 1px solid var(--border);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .lg-grid { grid-template-columns: 1fr; }
+    .arch-flow { flex-direction: column; }
+    .arch-arrow { transform: rotate(90deg); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<div class="hero">
+  <h1>Summary Slackbot</h1>
+  <p>URLを入力 → AIが記事を要約 → Slackに自動投稿するWebアプリ</p>
+  <div class="hero-badges">
+    <span class="hero-badge">Next.js + Python</span>
+    <span class="hero-badge">Claude / ChatGPT</span>
+    <span class="hero-badge">Supabase</span>
+    <span class="hero-badge">Vercel</span>
+  </div>
+</div>
+
+<!-- Architecture -->
+<div class="architecture">
+  <div class="arch-card">
+    <h2>🏗 システム構成</h2>
+    <div class="arch-flow">
+      <div class="arch-box arch-fe">
+        ブラウザ
+        <span class="arch-sub">Next.js (TypeScript)</span>
+      </div>
+      <span class="arch-arrow">→</span>
+      <div class="arch-box arch-be">
+        Python API
+        <span class="arch-sub">Vercel Serverless</span>
+      </div>
+      <span class="arch-arrow">→</span>
+      <div class="arch-box arch-db">
+        Supabase
+        <span class="arch-sub">認証 + DB</span>
+      </div>
+      <span class="arch-arrow" style="opacity:0.5;">→</span>
+      <div class="arch-box arch-slack">
+        Slack
+        <span class="arch-sub">Incoming Webhook</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat-card">
+    <div class="stat-number">10</div>
+    <div class="stat-label">設計書</div>
+  </div>
+  <div class="stat-card" style="border-top-color:#4caf50;">
+    <div class="stat-number" style="color:#4caf50;">15</div>
+    <div class="stat-label">機能</div>
+  </div>
+  <div class="stat-card" style="border-top-color:#ff9800;">
+    <div class="stat-number" style="color:#ff9800;">65</div>
+    <div class="stat-label">テストケース</div>
+  </div>
+  <div class="stat-card" style="border-top-color:#9c27b0;">
+    <div class="stat-number" style="color:#9c27b0;">5</div>
+    <div class="stat-label">開発日数</div>
+  </div>
+</div>
+
+<!-- Documents -->
+<div class="docs-section">
+  <h2>📄 設計書一覧</h2>
+  <div class="docs-grid">
+
+    <a class="doc-card" href="requirements.md" style="border-left-color:#2196f3;">
+      <div class="doc-icon" style="background:#e3f2fd;">📋</div>
+      <div class="doc-content">
+        <div class="doc-num">DOC-01</div>
+        <div class="doc-title">要件定義書</div>
+        <div class="doc-desc">プロジェクト概要、機能要件15件、非機能要件、技術スタック、スコープを定義</div>
+        <div class="doc-tags">
+          <span class="doc-tag tag-md">Markdown</span>
+        </div>
+        <div class="doc-file">docs/requirements.md</div>
+      </div>
+    </a>
+
+    <a class="doc-card" href="functional-requirements.md" style="border-left-color:#1565c0;">
+      <div class="doc-icon" style="background:#e3f2fd;">📝</div>
+      <div class="doc-content">
+        <div class="doc-num">DOC-02</div>
+        <div class="doc-title">機能要件書</div>
+        <div class="doc-desc">全11機能の詳細仕様 — 入力・処理フロー・出力・エラー処理を定義。認証5件、要約2件、履歴2件、ガード・LLM切替</div>
+        <div class="doc-tags">
+          <span class="doc-tag tag-md">Markdown</span>
+        </div>
+        <div class="doc-file">docs/functional-requirements.md</div>
+      </div>
+    </a>
+
+    <a class="doc-card" href="screen-transitions.html" style="border-left-color:#4caf50;">
+      <div class="doc-icon" style="background:#e8f5e9;">🗺</div>
+      <div class="doc-content">
+        <div class="doc-num">DOC-03</div>
+        <div class="doc-title">画面遷移図</div>
+        <div class="doc-desc">8画面のURL・遷移関係を定義。6つの遷移パターン（初回利用、要約、履歴確認、パスワードリセット、削除、未ログイン）</div>
+        <div class="doc-tags">
+          <span class="doc-tag tag-md">Markdown</span>
+          <span class="doc-tag tag-html">HTML図</span>
+        </div>
+        <div class="doc-file">docs/screen-transitions.md / .html</div>
+      </div>
+    </a>
+
+    <a class="doc-card" href="wireframes.html" style="border-left-color:#ff9800;">
+      <div class="doc-icon" style="background:#fff3e0;">🎨</div>
+      <div class="doc-content">
+        <div class="doc-num">DOC-04</div>
+        <div class="doc-title">ワイヤーフレーム</div>
+        <div class="doc-desc">全12画面のレイアウト・UI要素配置。ログイン、トップ、ローディング、要約結果、履歴、設定、ダイアログ、エラー状態</div>
+        <div class="doc-tags">
+          <span class="doc-tag tag-html">HTML</span>
+        </div>
+        <div class="doc-file">docs/wireframes.html</div>
+      </div>
+    </a>
+
+    <a class="doc-card" href="er-diagram.html" style="border-left-color:#9c27b0;">
+      <div class="doc-icon" style="background:#f3e5f5;">🗄</div>
+      <div class="doc-content">
+        <div class="doc-num">DOC-05</div>
+        <div class="doc-title">ER図</div>
+        <div class="doc-desc">auth.users（Supabase Auth管理）+ summaries（自作）の2テーブル構成。1:N関係、RLS設計の補足説明付き</div>
+        <div class="doc-tags">
+          <span class="doc-tag tag-html">HTML図</span>
+        </div>
+        <div class="doc-file">docs/er-diagram.html</div>
+      </div>
+    </a>
+
+    <a class="doc-card" href="../supabase/create_tables.sql" style="border-left-color:#4caf50;">
+      <div class="doc-icon" style="background:#e8f5e9;">💾</div>
+      <div class="doc-content">
+        <div class="doc-num">DOC-06</div>
+        <div class="doc-title">テーブル作成SQL</div>
+        <div class="doc-desc">summariesテーブル定義、インデックス3件、Row Level Security（RLS）ポリシー3件。Supabaseで実行するSQL</div>
+        <div class="doc-tags">
+          <span class="doc-tag tag-sql">SQL</span>
+        </div>
+        <div class="doc-file">supabase/create_tables.sql</div>
+      </div>
+    </a>
+
+    <a class="doc-card" href="api-design.md" style="border-left-color:#f44336;">
+      <div class="doc-icon" style="background:#fce4ec;">🔌</div>
+      <div class="doc-content">
+        <div class="doc-num">DOC-07</div>
+        <div class="doc-title">API設計書</div>
+        <div class="doc-desc">5エンドポイント定義（summarize, check-url, history, health）、5内部モジュール設計、認証方式、シーケンス図、環境変数一覧</div>
+        <div class="doc-tags">
+          <span class="doc-tag tag-md">Markdown</span>
+        </div>
+        <div class="doc-file">docs/api-design.md</div>
+      </div>
+    </a>
+
+    <a class="doc-card" href="component-list.md" style="border-left-color:#607d8b;">
+      <div class="doc-icon" style="background:#eceff1;">🧩</div>
+      <div class="doc-content">
+        <div class="doc-num">DOC-08</div>
+        <div class="doc-title">コンポーネント一覧</div>
+        <div class="doc-desc">フロントエンド: ページ9件 + UI部品10件 + ユーティリティ3件。バックエンド: API 4件 + モジュール5件。依存関係図付き</div>
+        <div class="doc-tags">
+          <span class="doc-tag tag-md">Markdown</span>
+        </div>
+        <div class="doc-file">docs/component-list.md</div>
+      </div>
+    </a>
+
+    <a class="doc-card" href="test-specification.md" style="border-left-color:#ff5722;">
+      <div class="doc-icon" style="background:#fbe9e7;">🧪</div>
+      <div class="doc-content">
+        <div class="doc-num">DOC-09</div>
+        <div class="doc-title">テスト仕様書</div>
+        <div class="doc-desc">全65テストケース（8カテゴリ）。認証15件、要約16件、履歴10件、Slack6件、API8件、UI5件、HC1件、削除4件。正常25/異常24/境界12</div>
+        <div class="doc-tags">
+          <span class="doc-tag tag-md">Markdown</span>
+        </div>
+        <div class="doc-file">docs/test-specification.md</div>
+      </div>
+    </a>
+
+    <a class="doc-card" href="development-schedule.md" style="border-left-color:#795548;">
+      <div class="doc-icon" style="background:#efebe9;">📅</div>
+      <div class="doc-content">
+        <div class="doc-num">DOC-10</div>
+        <div class="doc-title">開発スケジュール</div>
+        <div class="doc-desc">5日間（各2〜3時間）の開発計画。Day1:認証 → Day2:要約 → Day3:Slack+履歴 → Day4:追加機能 → Day5:デプロイ</div>
+        <div class="doc-tags">
+          <span class="doc-tag tag-md">Markdown</span>
+        </div>
+        <div class="doc-file">docs/development-schedule.md</div>
+      </div>
+    </a>
+
+  </div>
+</div>
+
+<!-- Features -->
+<div class="features">
+  <h2>⚡ 主な機能</h2>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <h4>🔐 ユーザー認証</h4>
+      <p>メール+パスワードで登録・ログイン。パスワードリセット・アカウント削除対応</p>
+    </div>
+    <div class="feature-card">
+      <h4>📝 AI記事要約</h4>
+      <p>URLを入力するだけでAIが記事を要約。3段階のレベル（簡単/普通/詳しく）選択可能</p>
+    </div>
+    <div class="feature-card">
+      <h4>💬 Slack自動投稿</h4>
+      <p>要約完了時にSlackチャンネルへ自動投稿（Incoming Webhook）</p>
+    </div>
+    <div class="feature-card">
+      <h4>📚 履歴管理</h4>
+      <p>過去の要約を一覧・詳細表示。重複URLの検出・再要約確認</p>
+    </div>
+    <div class="feature-card">
+      <h4>🤖 LLM切り替え</h4>
+      <p>Claude（Anthropic）と ChatGPT（OpenAI）を環境変数で切り替え可能</p>
+    </div>
+    <div class="feature-card">
+      <h4>📱 レスポンシブ</h4>
+      <p>PC・タブレット・スマホすべてで快適に操作可能</p>
+    </div>
+  </div>
+</div>
+
+<!-- Logic Gate -->
+<div class="logic-gate">
+  <h2>🚦 Logic Gate（学習成果物）</h2>
+  <div class="lg-grid">
+    <div class="lg-card">
+      <h4>L1 — 要件分解</h4>
+      <p>目的、スコープ、ユーザーフロー、完了条件</p>
+      <div class="lg-count">5項目</div>
+      <div class="doc-file" style="margin-top:4px;">docs/logic-gate/L1_requirements.md</div>
+    </div>
+    <div class="lg-card">
+      <h4>L2 — 品質チェックリスト</h4>
+      <p>守るべきルール、検知方法、対処法</p>
+      <div class="lg-count">10ルール</div>
+      <div class="doc-file" style="margin-top:4px;">docs/logic-gate/L2_validation.md</div>
+    </div>
+    <div class="lg-card">
+      <h4>L3 — テスト計画</h4>
+      <p>正常・異常・境界テスト</p>
+      <div class="lg-count">14ケース</div>
+      <div class="doc-file" style="margin-top:4px;">docs/logic-gate/L3_testplan.md</div>
+    </div>
+  </div>
+</div>
+
+<!-- Schedule -->
+<div class="schedule">
+  <h2>📅 開発スケジュール（5日間）</h2>
+  <div class="timeline">
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background:#2196f3;">1</div>
+      <div class="content">
+        <div class="day">Day1 — 環境構築 + 認証機能</div>
+        <div class="goal">🔐 ログイン・新規登録ができてトップ画面が表示される</div>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background:#4caf50;">2</div>
+      <div class="content">
+        <div class="day">Day2 — 要約機能（スクレイピング + LLM）</div>
+        <div class="goal">📝 URLを入力してAIの要約が画面に表示される ← 核心機能</div>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background:#ff9800;">3</div>
+      <div class="content">
+        <div class="day">Day3 — Slack投稿 + DB保存 + 履歴</div>
+        <div class="goal">💬 要約がSlackに投稿され、履歴で過去の要約が見られる</div>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background:#9c27b0;">4</div>
+      <div class="content">
+        <div class="day">Day4 — 追加機能 + 仕上げ</div>
+        <div class="goal">✨ 重複チェック、設定画面、レスポンシブ対応</div>
+      </div>
+    </div>
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background:#f44336;">5</div>
+      <div class="content">
+        <div class="day">Day5 — デプロイ + テスト + デモ準備</div>
+        <div class="goal">🚀 Vercelで本番稼働、デモ発表</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tech Stack -->
+<div class="tech">
+  <h2>🛠 技術スタック</h2>
+  <div class="tech-grid">
+    <div class="tech-card">
+      <div class="tech-name">Next.js</div>
+      <div class="tech-use">フロントエンド（TypeScript）</div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-name">Python</div>
+      <div class="tech-use">バックエンドAPI</div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-name">Supabase</div>
+      <div class="tech-use">認証 + データベース</div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-name">Claude / ChatGPT</div>
+      <div class="tech-use">AI要約生成</div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-name">BeautifulSoup</div>
+      <div class="tech-use">Webスクレイピング</div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-name">Slack Webhook</div>
+      <div class="tech-use">要約の自動投稿</div>
+    </div>
+    <div class="tech-card">
+      <div class="tech-name">Vercel</div>
+      <div class="tech-use">デプロイ・ホスティング</div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  Summary Slackbot — ブートキャンプ Part B<br>
+  設計書一覧ポータル
+</div>
+
+</body>
+</html>
