@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ER図 — Summary Slackbot</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; padding: 24px; color: #333; }
+  h1 { text-align: center; margin-bottom: 8px; }
+  .subtitle { text-align: center; color: #666; margin-bottom: 32px; }
+  .canvas { position: relative; width: 800px; height: 500px; margin: 0 auto; background: white; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); padding: 40px; }
+  .table-box { position: absolute; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); min-width: 280px; }
+  .table-header { padding: 12px 16px; font-weight: 700; font-size: 15px; color: white; }
+  .table-body { background: white; }
+  .table-row { padding: 8px 16px; font-size: 13px; display: flex; justify-content: space-between; border-bottom: 1px solid #f0f0f0; }
+  .table-row:last-child { border-bottom: none; }
+  .col-name { font-weight: 600; }
+  .col-type { color: #888; font-size: 12px; }
+  .pk { color: #f57c00; }
+  .fk { color: #7b1fa2; }
+  .note { position: absolute; background: #fff9c4; padding: 10px 14px; border-radius: 8px; font-size: 12px; line-height: 1.5; border: 1px solid #fff176; max-width: 250px; }
+  .legend { display: flex; justify-content: center; gap: 24px; margin-top: 24px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+  .legend-dot { width: 14px; height: 14px; border-radius: 4px; }
+  svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+</style>
+</head>
+<body>
+<h1>ER図</h1>
+<p class="subtitle">Summary Slackbot — データベース設計</p>
+
+<div class="canvas">
+  <svg>
+    <defs>
+      <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#999" />
+      </marker>
+    </defs>
+    <!-- users → summaries (1:N) -->
+    <line x1="350" y1="180" x2="460" y2="180" stroke="#999" stroke-width="2" marker-end="url(#arrow)" />
+    <text x="370" y="170" fill="#666" font-size="12">1 : N</text>
+  </svg>
+
+  <!-- auth.users テーブル（Supabase Auth管理） -->
+  <div class="table-box" style="left:40px; top:80px;">
+    <div class="table-header" style="background:#4caf50;">
+      auth.users（Supabase Auth 管理）
+    </div>
+    <div class="table-body">
+      <div class="table-row">
+        <span class="col-name"><span class="pk">PK</span> id</span>
+        <span class="col-type">UUID</span>
+      </div>
+      <div class="table-row">
+        <span class="col-name">email</span>
+        <span class="col-type">TEXT (UNIQUE)</span>
+      </div>
+      <div class="table-row">
+        <span class="col-name">encrypted_password</span>
+        <span class="col-type">TEXT</span>
+      </div>
+      <div class="table-row">
+        <span class="col-name">email_confirmed_at</span>
+        <span class="col-type">TIMESTAMPTZ</span>
+      </div>
+      <div class="table-row">
+        <span class="col-name">created_at</span>
+        <span class="col-type">TIMESTAMPTZ</span>
+      </div>
+      <div class="table-row">
+        <span class="col-name">updated_at</span>
+        <span class="col-type">TIMESTAMPTZ</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- summaries テーブル -->
+  <div class="table-box" style="left:460px; top:60px;">
+    <div class="table-header" style="background:#2196f3;">
+      summaries
+    </div>
+    <div class="table-body">
+      <div class="table-row">
+        <span class="col-name"><span class="pk">PK</span> id</span>
+        <span class="col-type">UUID</span>
+      </div>
+      <div class="table-row">
+        <span class="col-name"><span class="fk">FK</span> user_id</span>
+        <span class="col-type">UUID → auth.users.id</span>
+      </div>
+      <div class="table-row">
+        <span class="col-name">url</span>
+        <span class="col-type">TEXT (NOT NULL)</span>
+      </div>
+      <div class="table-row">
+        <span class="col-name">title</span>
+        <span class="col-type">TEXT</span>
+      </div>
+      <div class="table-row">
+        <span class="col-name">summary</span>
+        <span class="col-type">TEXT (NOT NULL)</span>
+      </div>
+      <div class="table-row">
+        <span class="col-name">summary_level</span>
+        <span class="col-type">TEXT (DEFAULT '普通')</span>
+      </div>
+      <div class="table-row">
+        <span class="col-name">llm_provider</span>
+        <span class="col-type">TEXT (DEFAULT 'anthropic')</span>
+      </div>
+      <div class="table-row">
+        <span class="col-name">created_at</span>
+        <span class="col-type">TIMESTAMPTZ</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 補足ノート -->
+  <div class="note" style="left:40px; top:370px;">
+    <strong>auth.users について</strong><br>
+    Supabase Auth が自動管理するテーブル。<br>
+    自分で CREATE TABLE する必要はない。<br>
+    登録・ログイン・パスワードリセットは<br>
+    Supabase Auth のAPIが処理する。
+  </div>
+
+  <div class="note" style="left:460px; top:370px;">
+    <strong>summaries について</strong><br>
+    自分で作成するテーブル。<br>
+    user_id で auth.users と紐づけ。<br>
+    RLS（Row Level Security）で<br>
+    自分のデータのみ閲覧可能にする。
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#4caf50;"></div>Supabase Auth 管理（自動）</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#2196f3;"></div>自分で作成するテーブル</div>
+  <div class="legend-item"><span class="pk" style="font-weight:bold;">PK</span> 主キー</div>
+  <div class="legend-item"><span class="fk" style="font-weight:bold;">FK</span> 外部キー</div>
+</div>
+
+</body>
+</html>
