@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>画面遷移図 — Summary Slackbot</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; padding: 24px; color: #333; }
+  h1 { text-align: center; margin-bottom: 8px; font-size: 24px; }
+  .subtitle { text-align: center; color: #666; margin-bottom: 32px; font-size: 14px; }
+  .legend { display: flex; justify-content: center; gap: 24px; margin-bottom: 24px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+  .legend-dot { width: 14px; height: 14px; border-radius: 4px; }
+  .canvas { position: relative; width: 900px; margin: 0 auto; height: 800px; }
+  .screen {
+    position: absolute; width: 160px; padding: 16px 12px; border-radius: 12px;
+    text-align: center; font-size: 13px; font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: default; transition: transform 0.2s;
+  }
+  .screen:hover { transform: scale(1.05); }
+  .screen .id { font-size: 11px; font-weight: 400; opacity: 0.7; display: block; margin-bottom: 4px; }
+  .screen .url { font-size: 10px; font-weight: 400; opacity: 0.6; margin-top: 4px; display: block; }
+  .auth { background: #e8f5e9; border: 2px solid #4caf50; color: #2e7d32; }
+  .main { background: #e3f2fd; border: 2px solid #2196f3; color: #1565c0; }
+  .history { background: #fff3e0; border: 2px solid #ff9800; color: #e65100; }
+  .settings { background: #f3e5f5; border: 2px solid #9c27b0; color: #6a1b9a; }
+  .external { background: #fce4ec; border: 2px dashed #e91e63; color: #c62828; }
+  svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+  svg line, svg path { stroke-width: 2; fill: none; }
+  .arrow { marker-end: url(#arrowhead); }
+  .arrow-bi { marker-end: url(#arrowhead); marker-start: url(#arrowhead-start); }
+  .label-box {
+    position: absolute; background: white; padding: 2px 8px; border-radius: 10px;
+    font-size: 10px; color: #666; border: 1px solid #ddd; white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+<h1>画面遷移図</h1>
+<p class="subtitle">Summary Slackbot — Web App 構成</p>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#4caf50"></div>認証系（ログイン不要）</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#2196f3"></div>メイン機能</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#ff9800"></div>履歴系</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#9c27b0"></div>設定系</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#e91e63;border:2px dashed #e91e63;width:12px;height:12px;"></div>外部連携</div>
+</div>
+
+<div class="canvas">
+  <svg>
+    <defs>
+      <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#999" />
+      </marker>
+      <marker id="arrowhead-start" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto-start-reverse">
+        <polygon points="10 0, 0 3.5, 10 7" fill="#999" />
+      </marker>
+    </defs>
+
+    <!-- ログイン → トップ -->
+    <line x1="370" y1="200" x2="370" y2="340" class="arrow" stroke="#999" />
+    <!-- ログイン → 新規登録 -->
+    <line x1="290" y1="180" x2="160" y2="260" class="arrow" stroke="#999" />
+    <!-- 新規登録 → ログイン（メール認証後） -->
+    <line x1="160" y1="300" x2="290" y2="210" class="arrow" stroke="#999" stroke-dasharray="6,4" />
+    <!-- ログイン → パスワードリセット -->
+    <line x1="450" y1="180" x2="600" y2="260" class="arrow" stroke="#999" />
+    <!-- パスワードリセット → ログイン -->
+    <line x1="600" y1="300" x2="450" y2="210" class="arrow" stroke="#999" stroke-dasharray="6,4" />
+    <!-- トップ → 要約結果 -->
+    <line x1="370" y1="410" x2="370" y2="520" class="arrow" stroke="#999" />
+    <!-- 要約結果 → トップ -->
+    <line x1="300" y1="540" x2="300" y2="420" class="arrow" stroke="#999" stroke-dasharray="6,4" />
+    <!-- トップ → 履歴一覧（ヘッダーナビ） -->
+    <line x1="290" y1="380" x2="110" y2="520" class="arrow" stroke="#ff9800" />
+    <!-- 履歴一覧 → 履歴詳細 -->
+    <line x1="110" y1="600" x2="110" y2="680" class="arrow" stroke="#ff9800" />
+    <!-- トップ → 設定（ヘッダーナビ） -->
+    <line x1="450" y1="380" x2="650" y2="520" class="arrow" stroke="#9c27b0" />
+    <!-- 設定 → ログイン（削除後） -->
+    <line x1="730" y1="520" x2="450" y2="200" class="arrow" stroke="#999" stroke-dasharray="6,4" />
+    <!-- 要約結果 → Slack -->
+    <line x1="450" y1="560" x2="600" y2="680" class="arrow" stroke="#e91e63" stroke-dasharray="4,4" />
+
+    <!-- 初回アクセス → ログイン -->
+    <line x1="370" y1="80" x2="370" y2="150" class="arrow" stroke="#999" />
+  </svg>
+
+  <!-- 初回アクセス -->
+  <div style="position:absolute; left:310px; top:40px; background:#eee; padding:10px 20px; border-radius:20px; font-size:13px; color:#666;">
+    初回アクセス / URL直接入力
+  </div>
+
+  <!-- S-01 ログイン -->
+  <div class="screen auth" style="left:290px; top:150px;">
+    <span class="id">S-01</span>
+    ログイン画面
+    <span class="url">/login</span>
+  </div>
+
+  <!-- S-02 新規登録 -->
+  <div class="screen auth" style="left:50px; top:250px;">
+    <span class="id">S-02</span>
+    新規登録画面
+    <span class="url">/register</span>
+  </div>
+
+  <!-- S-03 パスワードリセット -->
+  <div class="screen auth" style="left:550px; top:250px;">
+    <span class="id">S-03</span>
+    パスワードリセット
+    <span class="url">/reset-password</span>
+  </div>
+
+  <!-- S-04 トップ（要約入力） -->
+  <div class="screen main" style="left:290px; top:350px;">
+    <span class="id">S-04</span>
+    トップ画面<br>（URL入力・要約）
+    <span class="url">/</span>
+  </div>
+
+  <!-- S-05 要約結果 -->
+  <div class="screen main" style="left:290px; top:520px;">
+    <span class="id">S-05</span>
+    要約結果画面
+    <span class="url">/result</span>
+  </div>
+
+  <!-- S-06 履歴一覧 -->
+  <div class="screen history" style="left:30px; top:520px;">
+    <span class="id">S-06</span>
+    履歴一覧画面
+    <span class="url">/history</span>
+  </div>
+
+  <!-- S-07 履歴詳細 -->
+  <div class="screen history" style="left:30px; top:680px;">
+    <span class="id">S-07</span>
+    履歴詳細画面
+    <span class="url">/history/[id]</span>
+  </div>
+
+  <!-- S-08 設定 -->
+  <div class="screen settings" style="left:570px; top:520px;">
+    <span class="id">S-08</span>
+    設定画面
+    <span class="url">/settings</span>
+  </div>
+
+  <!-- Slack（外部） -->
+  <div class="screen external" style="left:550px; top:680px;">
+    <span class="id">外部</span>
+    Slack チャンネル
+    <span class="url">Incoming Webhook</span>
+  </div>
+
+  <!-- ラベル -->
+  <div class="label-box" style="left:195px; top:215px;">新規登録</div>
+  <div class="label-box" style="left:115px; top:315px; font-size:9px;">メール認証後</div>
+  <div class="label-box" style="left:480px; top:215px;">パスワード忘れ</div>
+  <div class="label-box" style="left:530px; top:315px; font-size:9px;">リセット後</div>
+  <div class="label-box" style="left:390px; top:280px;">ログイン成功</div>
+  <div class="label-box" style="left:390px; top:470px;">要約する</div>
+  <div class="label-box" style="left:240px; top:470px; font-size:9px;">トップに戻る</div>
+  <div class="label-box" style="left:150px; top:460px;">履歴</div>
+  <div class="label-box" style="left:130px; top:650px;">詳細表示</div>
+  <div class="label-box" style="left:510px; top:440px;">設定</div>
+  <div class="label-box" style="left:530px; top:620px; font-size:9px;">自動投稿</div>
+  <div class="label-box" style="left:620px; top:370px; font-size:9px;">削除→ログアウト</div>
+</div>
+
+</body>
+</html>

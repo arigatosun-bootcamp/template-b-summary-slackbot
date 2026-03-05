@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ワイヤーフレーム — Summary Slackbot</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; padding: 24px; color: #333; }
+  h1 { text-align: center; margin-bottom: 8px; }
+  .subtitle { text-align: center; color: #666; margin-bottom: 32px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 32px; max-width: 1200px; margin: 0 auto; }
+  .wireframe { background: white; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); overflow: hidden; }
+  .wf-header { background: #1a1a2e; color: white; padding: 12px 16px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
+  .wf-id { background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+  .wf-body { padding: 24px; min-height: 300px; }
+  /* Common UI Components */
+  .nav { background: #16213e; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+  .nav-logo { color: white; font-weight: bold; font-size: 15px; }
+  .nav-links { display: flex; gap: 16px; }
+  .nav-link { color: rgba(255,255,255,0.7); font-size: 13px; text-decoration: none; cursor: pointer; }
+  .nav-link:hover { color: white; }
+  .input-field { width: 100%; padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; margin-bottom: 12px; outline: none; }
+  .input-field:focus { border-color: #2196f3; }
+  .input-label { font-size: 13px; font-weight: 600; color: #555; margin-bottom: 6px; display: block; }
+  .btn { padding: 10px 24px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; width: 100%; }
+  .btn-primary { background: #2196f3; color: white; }
+  .btn-danger { background: #f44336; color: white; }
+  .btn-outline { background: white; color: #2196f3; border: 2px solid #2196f3; }
+  .link { color: #2196f3; font-size: 13px; text-decoration: none; cursor: pointer; }
+  .divider { border: none; border-top: 1px solid #eee; margin: 16px 0; }
+  .card { background: #f8f9fa; border-radius: 8px; padding: 14px; margin-bottom: 10px; border: 1px solid #e9ecef; }
+  .card:hover { border-color: #2196f3; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .tag-easy { background: #e8f5e9; color: #2e7d32; }
+  .tag-normal { background: #e3f2fd; color: #1565c0; }
+  .tag-detail { background: #fff3e0; color: #e65100; }
+  .select-field { width: 100%; padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; margin-bottom: 12px; background: white; }
+  .text-muted { color: #999; font-size: 13px; }
+  .text-small { font-size: 12px; color: #666; }
+  .summary-box { background: #f0f7ff; border-left: 4px solid #2196f3; padding: 16px; border-radius: 0 8px 8px 0; margin: 12px 0; }
+  .loading { text-align: center; padding: 40px; color: #666; }
+  .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid #e0e0e0; border-top-color: #2196f3; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-text { color: #f44336; font-size: 12px; margin-top: -8px; margin-bottom: 12px; }
+  .dialog-overlay { background: rgba(0,0,0,0.15); padding: 20px; border-radius: 8px; margin-top: 12px; }
+  .dialog { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+  .dialog-title { font-weight: 700; margin-bottom: 8px; }
+  .dialog-btns { display: flex; gap: 8px; margin-top: 16px; }
+  .dialog-btns .btn { width: auto; flex: 1; }
+  .empty-state { text-align: center; padding: 40px 20px; color: #999; }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<h1>ワイヤーフレーム</h1>
+<p class="subtitle">Summary Slackbot — 各画面のレイアウト</p>
+
+<div class="grid">
+
+  <!-- W-01: ログイン画面 -->
+  <div class="wireframe">
+    <div class="wf-header">
+      <span>W-01: ログイン画面</span>
+      <span class="wf-id">S-01 /login</span>
+    </div>
+    <div class="wf-body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
+      <div style="width:300px;">
+        <h2 style="text-align:center;margin-bottom:24px;">Summary Slackbot</h2>
+        <label class="input-label">メールアドレス</label>
+        <input class="input-field" type="email" placeholder="email@example.com">
+        <label class="input-label">パスワード</label>
+        <input class="input-field" type="password" placeholder="8文字以上">
+        <button class="btn btn-primary" style="margin-bottom:12px;">ログイン</button>
+        <div style="text-align:center;">
+          <a class="link">パスワードを忘れた方はこちら</a>
+        </div>
+        <hr class="divider">
+        <button class="btn btn-outline">新規登録はこちら</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- W-02: 新規登録画面 -->
+  <div class="wireframe">
+    <div class="wf-header">
+      <span>W-02: 新規登録画面</span>
+      <span class="wf-id">S-02 /register</span>
+    </div>
+    <div class="wf-body" style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
+      <div style="width:300px;">
+        <h2 style="text-align:center;margin-bottom:24px;">新規登録</h2>
+        <label class="input-label">メールアドレス</label>
+        <input class="input-field" type="email" placeholder="email@example.com">
+        <label class="input-label">パスワード</label>
+        <input class="input-field" type="password" placeholder="8文字以上">
+        <p class="error-text">* パスワードは8文字以上で入力してください</p>
+        <label class="input-label">パスワード（確認）</label>
+        <input class="input-field" type="password" placeholder="もう一度入力">
+        <button class="btn btn-primary" style="margin-bottom:12px;">登録する</button>
+        <div style="text-align:center;">
+          <a class="link">ログイン画面に戻る</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- W-03: トップ画面（要約入力） -->
+  <div class="wireframe">
+    <div class="wf-header">
+      <span>W-03: トップ画面（要約入力）</span>
+      <span class="wf-id">S-04 /</span>
+    </div>
+    <div class="wf-body" style="padding:0;">
+      <div class="nav">
+        <span class="nav-logo">Summary Slackbot</span>
+        <div class="nav-links">
+          <span class="nav-link">履歴</span>
+          <span class="nav-link">設定</span>
+          <span class="nav-link">ログアウト</span>
+        </div>
+      </div>
+      <div style="padding:24px;">
+        <h3 style="margin-bottom:16px;">記事を要約する</h3>
+        <label class="input-label">記事のURL</label>
+        <input class="input-field" type="url" placeholder="https://example.com/article">
+        <label class="input-label">要約レベル</label>
+        <select class="select-field">
+          <option>簡単（3行程度）</option>
+          <option selected>普通（5〜8行）</option>
+          <option>詳しく（15行程度）</option>
+        </select>
+        <button class="btn btn-primary">要約する</button>
+        <p class="text-muted" style="margin-top:8px;text-align:center;">要約結果はSlackチャンネルにも自動投稿されます</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- W-04: ローディング状態 -->
+  <div class="wireframe">
+    <div class="wf-header">
+      <span>W-04: ローディング状態</span>
+      <span class="wf-id">S-04 / (処理中)</span>
+    </div>
+    <div class="wf-body" style="padding:0;">
+      <div class="nav">
+        <span class="nav-logo">Summary Slackbot</span>
+        <div class="nav-links">
+          <span class="nav-link">履歴</span>
+          <span class="nav-link">設定</span>
+          <span class="nav-link">ログアウト</span>
+        </div>
+      </div>
+      <div class="loading" style="padding:80px 24px;">
+        <div class="spinner"></div>
+        <p style="font-size:16px;font-weight:600;">記事の要約を生成しています...</p>
+        <p class="text-muted" style="margin-top:8px;">しばらくお待ちください</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- W-05: 要約結果画面 -->
+  <div class="wireframe">
+    <div class="wf-header">
+      <span>W-05: 要約結果画面</span>
+      <span class="wf-id">S-05 /result</span>
+    </div>
+    <div class="wf-body" style="padding:0;">
+      <div class="nav">
+        <span class="nav-logo">Summary Slackbot</span>
+        <div class="nav-links">
+          <span class="nav-link">履歴</span>
+          <span class="nav-link">設定</span>
+          <span class="nav-link">ログアウト</span>
+        </div>
+      </div>
+      <div style="padding:24px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <h3>要約結果</h3>
+          <span class="tag tag-normal">普通</span>
+        </div>
+        <div class="summary-box">
+          <h4 style="margin-bottom:8px;">AIで変わるビジネスの未来 - 2026年の最新トレンド</h4>
+          <ul style="padding-left:20px;line-height:1.8;font-size:14px;">
+            <li>AI技術は2026年に入り急速に進化している</li>
+            <li>企業の業務効率化においてAI活用が標準に</li>
+            <li>特に自然言語処理の分野で大きな進歩</li>
+            <li>中小企業でもAI導入のハードルが低下</li>
+            <li>今後は人間とAIの協業モデルが主流に</li>
+          </ul>
+        </div>
+        <p class="text-small" style="margin-bottom:16px;">
+          🔗 <a class="link">https://example.com/ai-business-2026</a>
+        </p>
+        <p class="text-small" style="color:#4caf50;margin-bottom:16px;">✅ Slackチャンネルに投稿しました</p>
+        <button class="btn btn-outline">トップに戻る</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- W-06: 履歴一覧画面 -->
+  <div class="wireframe">
+    <div class="wf-header">
+      <span>W-06: 履歴一覧画面</span>
+      <span class="wf-id">S-06 /history</span>
+    </div>
+    <div class="wf-body" style="padding:0;">
+      <div class="nav">
+        <span class="nav-logo">Summary Slackbot</span>
+        <div class="nav-links">
+          <span class="nav-link" style="color:white;font-weight:bold;">履歴</span>
+          <span class="nav-link">設定</span>
+          <span class="nav-link">ログアウト</span>
+        </div>
+      </div>
+      <div style="padding:24px;">
+        <h3 style="margin-bottom:16px;">要約履歴</h3>
+        <div class="card" style="cursor:pointer;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <strong style="font-size:14px;">AIで変わるビジネスの未来</strong>
+            <span class="tag tag-normal">普通</span>
+          </div>
+          <p class="text-small" style="margin-top:4px;">https://example.com/ai-business</p>
+          <p class="text-small">2026/03/04 14:30</p>
+        </div>
+        <div class="card" style="cursor:pointer;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <strong style="font-size:14px;">プログラミング学習のコツ</strong>
+            <span class="tag tag-easy">簡単</span>
+          </div>
+          <p class="text-small" style="margin-top:4px;">https://example.com/programming</p>
+          <p class="text-small">2026/03/03 10:15</p>
+        </div>
+        <div class="card" style="cursor:pointer;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <strong style="font-size:14px;">リモートワークの生産性向上</strong>
+            <span class="tag tag-detail">詳しく</span>
+          </div>
+          <p class="text-small" style="margin-top:4px;">https://example.com/remote-work</p>
+          <p class="text-small">2026/03/02 09:00</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- W-07: 履歴詳細画面 -->
+  <div class="wireframe">
+    <div class="wf-header">
+      <span>W-07: 履歴詳細画面</span>
+      <span class="wf-id">S-07 /history/[id]</span>
+    </div>
+    <div class="wf-body" style="padding:0;">
+      <div class="nav">
+        <span class="nav-logo">Summary Slackbot</span>
+        <div class="nav-links">
+          <span class="nav-link" style="color:white;font-weight:bold;">履歴</span>
+          <span class="nav-link">設定</span>
+          <span class="nav-link">ログアウト</span>
+        </div>
+      </div>
+      <div style="padding:24px;">
+        <a class="link" style="font-size:12px;">← 履歴一覧に戻る</a>
+        <h3 style="margin:12px 0 8px;">AIで変わるビジネスの未来</h3>
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <span class="tag tag-normal">普通</span>
+          <span class="text-small">Claude で生成</span>
+          <span class="text-small">2026/03/04 14:30</span>
+        </div>
+        <div class="summary-box">
+          <ul style="padding-left:20px;line-height:1.8;font-size:14px;">
+            <li>AI技術は2026年に入り急速に進化している</li>
+            <li>企業の業務効率化においてAI活用が標準に</li>
+            <li>特に自然言語処理の分野で大きな進歩</li>
+            <li>中小企業でもAI導入のハードルが低下</li>
+            <li>今後は人間とAIの協業モデルが主流に</li>
+          </ul>
+        </div>
+        <p class="text-small">🔗 <a class="link">https://example.com/ai-business-2026</a></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- W-08: 履歴なし状態 -->
+  <div class="wireframe">
+    <div class="wf-header">
+      <span>W-08: 履歴なし状態</span>
+      <span class="wf-id">S-06 /history (0件)</span>
+    </div>
+    <div class="wf-body" style="padding:0;">
+      <div class="nav">
+        <span class="nav-logo">Summary Slackbot</span>
+        <div class="nav-links">
+          <span class="nav-link" style="color:white;font-weight:bold;">履歴</span>
+          <span class="nav-link">設定</span>
+          <span class="nav-link">ログアウト</span>
+        </div>
+      </div>
+      <div class="empty-state">
+        <div class="empty-icon">📄</div>
+        <p style="font-size:16px;font-weight:600;color:#666;">まだ要約履歴がありません</p>
+        <p class="text-muted" style="margin-top:8px;">トップ画面からURLを入力して要約を始めましょう</p>
+        <button class="btn btn-primary" style="width:auto;margin-top:16px;padding:10px 32px;">トップに戻る</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- W-09: 設定画面 -->
+  <div class="wireframe">
+    <div class="wf-header">
+      <span>W-09: 設定画面</span>
+      <span class="wf-id">S-08 /settings</span>
+    </div>
+    <div class="wf-body" style="padding:0;">
+      <div class="nav">
+        <span class="nav-logo">Summary Slackbot</span>
+        <div class="nav-links">
+          <span class="nav-link">履歴</span>
+          <span class="nav-link" style="color:white;font-weight:bold;">設定</span>
+          <span class="nav-link">ログアウト</span>
+        </div>
+      </div>
+      <div style="padding:24px;">
+        <h3 style="margin-bottom:16px;">設定</h3>
+        <div class="card">
+          <p class="input-label">メールアドレス</p>
+          <p style="font-size:14px;">user@example.com</p>
+        </div>
+        <hr class="divider" style="margin:24px 0;">
+        <h4 style="color:#f44336;margin-bottom:12px;">危険な操作</h4>
+        <p class="text-small" style="margin-bottom:12px;">アカウントを削除すると、すべての要約履歴も削除されます。この操作は取り消せません。</p>
+        <button class="btn btn-danger">アカウントを削除する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- W-10: 削除確認ダイアログ -->
+  <div class="wireframe">
+    <div class="wf-header">
+      <span>W-10: 削除確認ダイアログ</span>
+      <span class="wf-id">S-08 /settings (ダイアログ)</span>
+    </div>
+    <div class="wf-body" style="padding:0;">
+      <div class="nav">
+        <span class="nav-logo">Summary Slackbot</span>
+        <div class="nav-links">
+          <span class="nav-link">履歴</span>
+          <span class="nav-link" style="color:white;font-weight:bold;">設定</span>
+          <span class="nav-link">ログアウト</span>
+        </div>
+      </div>
+      <div style="padding:24px;">
+        <div class="dialog-overlay">
+          <div class="dialog">
+            <p class="dialog-title">本当に削除しますか？</p>
+            <p class="text-small">アカウントと全ての要約履歴が完全に削除されます。この操作は取り消せません。</p>
+            <div class="dialog-btns">
+              <button class="btn btn-outline" style="font-size:13px;">キャンセル</button>
+              <button class="btn btn-danger" style="font-size:13px;">削除する</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- W-11: エラー状態 -->
+  <div class="wireframe">
+    <div class="wf-header">
+      <span>W-11: エラー状態</span>
+      <span class="wf-id">S-05 /result (エラー)</span>
+    </div>
+    <div class="wf-body" style="padding:0;">
+      <div class="nav">
+        <span class="nav-logo">Summary Slackbot</span>
+        <div class="nav-links">
+          <span class="nav-link">履歴</span>
+          <span class="nav-link">設定</span>
+          <span class="nav-link">ログアウト</span>
+        </div>
+      </div>
+      <div style="padding:24px;text-align:center;">
+        <div style="font-size:48px;margin:24px 0;">⚠️</div>
+        <h3 style="color:#f44336;margin-bottom:8px;">要約の生成に失敗しました</h3>
+        <p class="text-muted" style="margin-bottom:24px;">もう一度お試しください</p>
+        <button class="btn btn-primary" style="width:auto;padding:10px 32px;">トップに戻る</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- W-12: 重複URL確認 -->
+  <div class="wireframe">
+    <div class="wf-header">
+      <span>W-12: 重複URL確認ダイアログ</span>
+      <span class="wf-id">S-04 / (重複時)</span>
+    </div>
+    <div class="wf-body" style="padding:0;">
+      <div class="nav">
+        <span class="nav-logo">Summary Slackbot</span>
+        <div class="nav-links">
+          <span class="nav-link">履歴</span>
+          <span class="nav-link">設定</span>
+          <span class="nav-link">ログアウト</span>
+        </div>
+      </div>
+      <div style="padding:24px;">
+        <div class="dialog-overlay">
+          <div class="dialog">
+            <p class="dialog-title">この記事は以前に要約しています</p>
+            <p class="text-small">2026/03/02 に「普通」レベルで要約済みです。</p>
+            <div class="dialog-btns" style="flex-direction:column;">
+              <button class="btn btn-primary" style="font-size:13px;">再要約する</button>
+              <button class="btn btn-outline" style="font-size:13px;">過去の要約を見る</button>
+              <button class="btn" style="font-size:13px;color:#999;">キャンセル</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
