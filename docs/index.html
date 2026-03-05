@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>設計書一覧 — Summary Slackbot</title>
+<style>
+  :root {
+    --primary: #2196f3;
+    --primary-dark: #1565c0;
+    --green: #4caf50;
+    --orange: #ff9800;
+    --purple: #9c27b0;
+    --red: #f44336;
+    --bg: #f5f7fa;
+    --card-bg: #ffffff;
+    --text: #333;
+    --text-muted: #888;
+    --border: #e8ecf1;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  .hero { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: white; padding: 48px 24px; text-align: center; }
+  .hero h1 { font-size: 32px; margin-bottom: 8px; }
+  .hero p { color: rgba(255,255,255,0.7); font-size: 16px; }
+  .hero-badges { display: flex; justify-content: center; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+  .hero-badge { background: rgba(255,255,255,0.15); padding: 6px 16px; border-radius: 20px; font-size: 13px; color: rgba(255,255,255,0.9); }
+  .architecture { max-width: 900px; margin: -32px auto 0; padding: 0 24px; position: relative; z-index: 1; }
+  .arch-card { background: var(--card-bg); border-radius: 16px; padding: 32px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+  .arch-card h2 { font-size: 18px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .arch-flow { display: flex; align-items: center; justify-content: center; gap: 0; flex-wrap: wrap; padding: 16px 0; }
+  .arch-box { padding: 14px 20px; border-radius: 12px; text-align: center; font-size: 13px; font-weight: 600; min-width: 140px; }
+  .arch-arrow { font-size: 24px; color: #ccc; padding: 0 8px; }
+  .arch-fe { background: #e3f2fd; color: #1565c0; border: 2px solid #90caf9; }
+  .arch-be { background: #fff3e0; color: #e65100; border: 2px solid #ffcc80; }
+  .arch-db { background: #e8f5e9; color: #2e7d32; border: 2px solid #a5d6a7; }
+  .arch-slack { background: #f3e5f5; color: #6a1b9a; border: 2px solid #ce93d8; }
+  .arch-sub { font-weight: 400; font-size: 11px; display: block; margin-top: 4px; opacity: 0.8; }
+  .stats { max-width: 900px; margin: 24px auto; padding: 0 24px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .stat-card { background: var(--card-bg); border-radius: 12px; padding: 20px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-top: 3px solid var(--primary); }
+  .stat-number { font-size: 32px; font-weight: 800; color: var(--primary); }
+  .stat-label { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+  .docs-section { max-width: 900px; margin: 32px auto; padding: 0 24px; }
+  .docs-section h2 { font-size: 20px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .docs-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  .doc-card { background: var(--card-bg); border-radius: 12px; padding: 20px 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); display: flex; align-items: flex-start; gap: 16px; border-left: 4px solid var(--primary); transition: transform 0.15s, box-shadow 0.15s; text-decoration: none; color: inherit; cursor: pointer; }
+  .doc-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+  .doc-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+  .doc-content { flex: 1; }
+  .doc-num { font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.5px; }
+  .doc-title { font-size: 16px; font-weight: 700; margin: 2px 0 6px; }
+  .doc-desc { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+  .doc-tags { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .doc-tag { padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .tag-md { background: #e3f2fd; color: #1565c0; }
+  .tag-html { background: #fff3e0; color: #e65100; }
+  .tag-sql { background: #e8f5e9; color: #2e7d32; }
+  .doc-file { font-size: 12px; color: var(--primary); margin-top: 6px; font-family: monospace; }
+  .features { max-width: 900px; margin: 32px auto; padding: 0 24px; }
+  .features h2 { font-size: 20px; margin-bottom: 16px; }
+  .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+  .feature-card { background: var(--card-bg); border-radius: 12px; padding: 16px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+  .feature-card h4 { font-size: 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .feature-card p { font-size: 13px; color: var(--text-muted); }
+  .schedule { max-width: 900px; margin: 32px auto; padding: 0 24px; }
+  .schedule h2 { font-size: 20px; margin-bottom: 16px; }
+  .timeline { position: relative; padding-left: 32px; }
+  .timeline::before { content: ''; position: absolute; left: 11px; top: 8px; bottom: 8px; width: 2px; background: #e0e0e0; }
+  .timeline-item { position: relative; margin-bottom: 16px; }
+  .timeline-dot { position: absolute; left: -32px; top: 4px; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: white; }
+  .timeline-item .t-content { background: var(--card-bg); border-radius: 10px; padding: 14px 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+  .timeline-item .day { font-weight: 700; font-size: 14px; }
+  .timeline-item .goal { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+  .tech { max-width: 900px; margin: 32px auto; padding: 0 24px; }
+  .tech h2 { font-size: 20px; margin-bottom: 16px; }
+  .tech-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+  .tech-card { background: var(--card-bg); border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+  .tech-card .tech-name { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+  .tech-card .tech-use { font-size: 12px; color: var(--text-muted); }
+  .logic-gate { max-width: 900px; margin: 32px auto; padding: 0 24px; }
+  .logic-gate h2 { font-size: 20px; margin-bottom: 16px; }
+  .lg-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .lg-card { background: var(--card-bg); border-radius: 12px; padding: 16px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border-top: 3px solid var(--green); }
+  .lg-card h4 { font-size: 14px; margin-bottom: 4px; }
+  .lg-card p { font-size: 12px; color: var(--text-muted); }
+  .lg-card .lg-count { font-size: 24px; font-weight: 800; color: var(--green); margin-top: 8px; }
+  .footer { max-width: 900px; margin: 48px auto 24px; padding: 24px; text-align: center; color: var(--text-muted); font-size: 13px; border-top: 1px solid var(--border); }
+
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: flex-start; padding: 40px 24px; overflow-y: auto; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: white; border-radius: 16px; max-width: 860px; width: 100%; max-height: calc(100vh - 80px); overflow-y: auto; box-shadow: 0 8px 40px rgba(0,0,0,0.2); animation: modalIn 0.2s ease-out; }
+  @keyframes modalIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .modal-header { position: sticky; top: 0; background: white; padding: 20px 28px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; z-index: 1; border-radius: 16px 16px 0 0; }
+  .modal-header h2 { font-size: 20px; display: flex; align-items: center; gap: 10px; }
+  .modal-close { width: 36px; height: 36px; border-radius: 50%; border: none; background: #f0f0f0; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #666; transition: background 0.15s; }
+  .modal-close:hover { background: #e0e0e0; }
+  .modal-body { padding: 28px; }
+  .modal-body h1 { font-size: 22px; margin: 24px 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--primary); }
+  .modal-body h2 { font-size: 18px; margin: 20px 0 10px; color: var(--primary-dark); }
+  .modal-body h3 { font-size: 15px; margin: 16px 0 8px; }
+  .modal-body h4 { font-size: 14px; margin: 12px 0 6px; }
+  .modal-body p { margin: 8px 0; font-size: 14px; }
+  .modal-body ul, .modal-body ol { margin: 8px 0 8px 24px; font-size: 14px; }
+  .modal-body li { margin: 4px 0; }
+  .modal-body table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  .modal-body th { background: #f5f7fa; padding: 10px 12px; text-align: left; border: 1px solid #e0e0e0; font-weight: 700; }
+  .modal-body td { padding: 8px 12px; border: 1px solid #e0e0e0; vertical-align: top; }
+  .modal-body tr:hover td { background: #f8f9ff; }
+  .modal-body code { background: #f0f3f8; padding: 2px 6px; border-radius: 4px; font-size: 13px; font-family: 'SF Mono', Consolas, monospace; }
+  .modal-body pre { background: #1e1e2e; color: #cdd6f4; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 12px 0; font-size: 13px; line-height: 1.5; }
+  .modal-body pre code { background: none; padding: 0; color: inherit; }
+  .modal-body hr { border: none; border-top: 1px solid #eee; margin: 20px 0; }
+  .modal-body .section-badge { display: inline-block; padding: 3px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; margin-bottom: 8px; }
+  .modal-body iframe { width: 100%; border: 1px solid #e0e0e0; border-radius: 8px; margin: 12px 0; }
+
+  @media (max-width: 768px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .lg-grid { grid-template-columns: 1fr; }
+    .arch-flow { flex-direction: column; }
+    .arch-arrow { transform: rotate(90deg); }
+    .modal-overlay { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>Summary Slackbot</h1>
+  <p>URLを入力 → AIが記事を要約 → Slackに自動投稿するWebアプリ</p>
+  <div class="hero-badges">
+    <span class="hero-badge">Next.js + Python</span>
+    <span class="hero-badge">Claude / ChatGPT</span>
+    <span class="hero-badge">Supabase</span>
+    <span class="hero-badge">Vercel</span>
+  </div>
+</div>
+
+<div class="architecture">
+  <div class="arch-card">
+    <h2>🏗 システム構成</h2>
+    <div class="arch-flow">
+      <div class="arch-box arch-fe">ブラウザ<span class="arch-sub">Next.js (TypeScript)</span></div>
+      <span class="arch-arrow">→</span>
+      <div class="arch-box arch-be">Python API<span class="arch-sub">Vercel Serverless</span></div>
+      <span class="arch-arrow">→</span>
+      <div class="arch-box arch-db">Supabase<span class="arch-sub">認証 + DB</span></div>
+      <span class="arch-arrow" style="opacity:0.5;">→</span>
+      <div class="arch-box arch-slack">Slack<span class="arch-sub">Incoming Webhook</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat-card"><div class="stat-number">10</div><div class="stat-label">設計書</div></div>
+  <div class="stat-card" style="border-top-color:#4caf50;"><div class="stat-number" style="color:#4caf50;">15</div><div class="stat-label">機能</div></div>
+  <div class="stat-card" style="border-top-color:#ff9800;"><div class="stat-number" style="color:#ff9800;">65</div><div class="stat-label">テストケース</div></div>
+  <div class="stat-card" style="border-top-color:#9c27b0;"><div class="stat-number" style="color:#9c27b0;">5</div><div class="stat-label">開発日数</div></div>
+</div>
+
+<div class="docs-section">
+  <h2>📄 設計書一覧 <span style="font-size:13px;font-weight:400;color:var(--text-muted);">— クリックで詳細表示</span></h2>
+  <div class="docs-grid">
+    <div class="doc-card" onclick="openModal('doc01')" style="border-left-color:#2196f3;"><div class="doc-icon" style="background:#e3f2fd;">📋</div><div class="doc-content"><div class="doc-num">DOC-01</div><div class="doc-title">要件定義書</div><div class="doc-desc">プロジェクト概要、機能要件15件、非機能要件、技術スタック、スコープを定義</div><div class="doc-file">docs/requirements.md</div></div></div>
+    <div class="doc-card" onclick="openModal('doc02')" style="border-left-color:#1565c0;"><div class="doc-icon" style="background:#e3f2fd;">📝</div><div class="doc-content"><div class="doc-num">DOC-02</div><div class="doc-title">機能要件書</div><div class="doc-desc">全11機能の詳細仕様 — 入力・処理フロー・出力・エラー処理を定義</div><div class="doc-file">docs/functional-requirements.md</div></div></div>
+    <div class="doc-card" onclick="openModal('doc03')" style="border-left-color:#4caf50;"><div class="doc-icon" style="background:#e8f5e9;">🗺</div><div class="doc-content"><div class="doc-num">DOC-03</div><div class="doc-title">画面遷移図</div><div class="doc-desc">8画面のURL・遷移関係を定義。6つの遷移パターン</div><div class="doc-file">docs/screen-transitions.html</div></div></div>
+    <div class="doc-card" onclick="openModal('doc04')" style="border-left-color:#ff9800;"><div class="doc-icon" style="background:#fff3e0;">🎨</div><div class="doc-content"><div class="doc-num">DOC-04</div><div class="doc-title">ワイヤーフレーム</div><div class="doc-desc">全12画面のレイアウト・UI要素配置</div><div class="doc-file">docs/wireframes.html</div></div></div>
+    <div class="doc-card" onclick="openModal('doc05')" style="border-left-color:#9c27b0;"><div class="doc-icon" style="background:#f3e5f5;">🗄</div><div class="doc-content"><div class="doc-num">DOC-05</div><div class="doc-title">ER図</div><div class="doc-desc">auth.users + summariesの2テーブル構成。1:N関係</div><div class="doc-file">docs/er-diagram.html</div></div></div>
+    <div class="doc-card" onclick="openModal('doc06')" style="border-left-color:#4caf50;"><div class="doc-icon" style="background:#e8f5e9;">💾</div><div class="doc-content"><div class="doc-num">DOC-06</div><div class="doc-title">テーブル作成SQL</div><div class="doc-desc">summariesテーブル、インデックス3件、RLSポリシー3件</div><div class="doc-file">supabase/create_tables.sql</div></div></div>
+    <div class="doc-card" onclick="openModal('doc07')" style="border-left-color:#f44336;"><div class="doc-icon" style="background:#fce4ec;">🔌</div><div class="doc-content"><div class="doc-num">DOC-07</div><div class="doc-title">API設計書</div><div class="doc-desc">5エンドポイント、5内部モジュール、認証方式、シーケンス図</div><div class="doc-file">docs/api-design.md</div></div></div>
+    <div class="doc-card" onclick="openModal('doc08')" style="border-left-color:#607d8b;"><div class="doc-icon" style="background:#eceff1;">🧩</div><div class="doc-content"><div class="doc-num">DOC-08</div><div class="doc-title">コンポーネント一覧</div><div class="doc-desc">フロントエンド22件 + バックエンド9件。依存関係図付き</div><div class="doc-file">docs/component-list.md</div></div></div>
+    <div class="doc-card" onclick="openModal('doc09')" style="border-left-color:#ff5722;"><div class="doc-icon" style="background:#fbe9e7;">🧪</div><div class="doc-content"><div class="doc-num">DOC-09</div><div class="doc-title">テスト仕様書</div><div class="doc-desc">全65テストケース（8カテゴリ）。正常25/異常24/境界12</div><div class="doc-file">docs/test-specification.md</div></div></div>
+    <div class="doc-card" onclick="openModal('doc10')" style="border-left-color:#795548;"><div class="doc-icon" style="background:#efebe9;">📅</div><div class="doc-content"><div class="doc-num">DOC-10</div><div class="doc-title">開発スケジュール</div><div class="doc-desc">5日間（各2〜3時間）の開発計画</div><div class="doc-file">docs/development-schedule.md</div></div></div>
+  </div>
+</div>
+
+<div class="features">
+  <h2>⚡ 主な機能</h2>
+  <div class="feature-grid">
+    <div class="feature-card"><h4>🔐 ユーザー認証</h4><p>メール+パスワードで登録・ログイン。パスワードリセット・アカウント削除対応</p></div>
+    <div class="feature-card"><h4>📝 AI記事要約</h4><p>URLを入力するだけでAIが記事を要約。3段階のレベル選択可能</p></div>
+    <div class="feature-card"><h4>💬 Slack自動投稿</h4><p>要約完了時にSlackチャンネルへ自動投稿</p></div>
+    <div class="feature-card"><h4>📚 履歴管理</h4><p>過去の要約を一覧・詳細表示。重複URLの検出</p></div>
+    <div class="feature-card"><h4>🤖 LLM切り替え</h4><p>Claude と ChatGPT を環境変数で切り替え可能</p></div>
+    <div class="feature-card"><h4>📱 レスポンシブ</h4><p>PC・タブレット・スマホすべてで快適に操作可能</p></div>
+  </div>
+</div>
+
+<div class="logic-gate">
+  <h2>🚦 Logic Gate（学習成果物）</h2>
+  <div class="lg-grid">
+    <div class="lg-card"><h4>L1 — 要件分解</h4><p>目的、スコープ、ユーザーフロー、完了条件</p><div class="lg-count">5項目</div></div>
+    <div class="lg-card"><h4>L2 — 品質チェックリスト</h4><p>守るべきルール、検知方法、対処法</p><div class="lg-count">10ルール</div></div>
+    <div class="lg-card"><h4>L3 — テスト計画</h4><p>正常・異常・境界テスト</p><div class="lg-count">14ケース</div></div>
+  </div>
+</div>
+
+<div class="schedule">
+  <h2>📅 開発スケジュール（5日間）</h2>
+  <div class="timeline">
+    <div class="timeline-item"><div class="timeline-dot" style="background:#2196f3;">1</div><div class="t-content"><div class="day">Day1 — 環境構築 + 認証機能</div><div class="goal">🔐 ログイン・新規登録ができてトップ画面が表示される</div></div></div>
+    <div class="timeline-item"><div class="timeline-dot" style="background:#4caf50;">2</div><div class="t-content"><div class="day">Day2 — 要約機能（スクレイピング + LLM）</div><div class="goal">📝 URLを入力してAIの要約が画面に表示される ← 核心機能</div></div></div>
+    <div class="timeline-item"><div class="timeline-dot" style="background:#ff9800;">3</div><div class="t-content"><div class="day">Day3 — Slack投稿 + DB保存 + 履歴</div><div class="goal">💬 要約がSlackに投稿され、履歴で過去の要約が見られる</div></div></div>
+    <div class="timeline-item"><div class="timeline-dot" style="background:#9c27b0;">4</div><div class="t-content"><div class="day">Day4 — 追加機能 + 仕上げ</div><div class="goal">✨ 重複チェック、設定画面、レスポンシブ対応</div></div></div>
+    <div class="timeline-item"><div class="timeline-dot" style="background:#f44336;">5</div><div class="t-content"><div class="day">Day5 — デプロイ + テスト + デモ準備</div><div class="goal">🚀 Vercelで本番稼働、デモ発表</div></div></div>
+  </div>
+</div>
+
+<div class="tech">
+  <h2>🛠 技術スタック</h2>
+  <div class="tech-grid">
+    <div class="tech-card"><div class="tech-name">Next.js</div><div class="tech-use">フロントエンド（TypeScript）</div></div>
+    <div class="tech-card"><div class="tech-name">Python</div><div class="tech-use">バックエンドAPI</div></div>
+    <div class="tech-card"><div class="tech-name">Supabase</div><div class="tech-use">認証 + データベース</div></div>
+    <div class="tech-card"><div class="tech-name">Claude / ChatGPT</div><div class="tech-use">AI要約生成</div></div>
+    <div class="tech-card"><div class="tech-name">BeautifulSoup</div><div class="tech-use">Webスクレイピング</div></div>
+    <div class="tech-card"><div class="tech-name">Slack Webhook</div><div class="tech-use">要約の自動投稿</div></div>
+    <div class="tech-card"><div class="tech-name">Vercel</div><div class="tech-use">デプロイ・ホスティング</div></div>
+  </div>
+</div>
+
+<div class="footer">Summary Slackbot — ブートキャンプ Part B<br>設計書一覧ポータル</div>
+
+<!-- ===== MODAL ===== -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle"></h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+const docs = {
+  doc01: {
+    title: '📋 要件定義書',
+    content: `
+<h1>要件定義書 — Summary Slackbot</h1>
+<h2>1. プロジェクト概要</h2>
+<table><tr><th>項目</th><th>内容</th></tr>
+<tr><td>プロジェクト名</td><td>Summary Slackbot</td></tr>
+<tr><td>概要</td><td>URLを入力するとAIが記事を要約し、Slackチャンネルに自動投稿するWebアプリ</td></tr>
+<tr><td>対象ユーザー</td><td>長い記事を読む時間がないビジネスパーソン</td></tr>
+<tr><td>解決する課題</td><td>気になる記事を見つけても長文で読めない → AIが短く要約してくれる</td></tr></table>
+
+<h2>2. システム構成</h2>
+<pre><code>[ブラウザ] → [Next.js（フロントエンド）]
+                    │
+                    ▼
+            [Python API（Vercel Serverless Functions）]
+            ├── スクレイピング（requests + BeautifulSoup）
+            ├── LLM要約（anthropic / openai SDK）
+            └── Slack投稿（Incoming Webhook）
+                    │
+                    ▼
+              [Supabase（データベース + 認証）]</code></pre>
+
+<h2>3. 機能要件</h2>
+<h3>3.1 ユーザー認証</h3>
+<table><tr><th>ID</th><th>機能</th><th>説明</th></tr>
+<tr><td>F-01</td><td>新規登録</td><td>メールアドレス + パスワード（8文字以上）で登録。確認メール送信</td></tr>
+<tr><td>F-02</td><td>ログイン</td><td>メール + パスワードでログイン → トップ画面へ遷移</td></tr>
+<tr><td>F-03</td><td>パスワードリセット</td><td>ログイン画面から「パスワードを忘れた方はこちら」→ リセットメール送信</td></tr>
+<tr><td>F-04</td><td>ログアウト</td><td>ログアウトボタンでセッション終了 → ログイン画面へ遷移</td></tr>
+<tr><td>F-05</td><td>アカウント削除</td><td>設定画面から削除。確認ダイアログ表示後に実行</td></tr></table>
+
+<h3>3.2 記事要約</h3>
+<table><tr><th>ID</th><th>機能</th><th>説明</th></tr>
+<tr><td>F-06</td><td>URL入力</td><td>トップ画面のフォームにURLを貼り付ける</td></tr>
+<tr><td>F-07</td><td>要約レベル選択</td><td>「簡単（3行）」「普通（5〜8行）」「詳しく（15行）」から選択。デフォルトは「普通」</td></tr>
+<tr><td>F-08</td><td>要約生成</td><td>Python APIがURLをスクレイピング → LLMで要約生成</td></tr>
+<tr><td>F-09</td><td>要約結果表示</td><td>画面上に要約タイトル + 箇条書きの要約を表示</td></tr>
+<tr><td>F-10</td><td>Slack自動投稿</td><td>要約完了時にSlack Incoming WebhookでSlackチャンネルに自動投稿</td></tr>
+<tr><td>F-11</td><td>重複URLチェック</td><td>過去に要約済みのURLの場合、「再要約しますか？」と確認表示</td></tr>
+<tr><td>F-12</td><td>ローディング表示</td><td>要約生成中は「記事の要約を生成しています...」とローディングアニメーション表示</td></tr></table>
+
+<h3>3.3 要約履歴</h3>
+<table><tr><th>ID</th><th>機能</th><th>説明</th></tr>
+<tr><td>F-13</td><td>履歴一覧</td><td>過去の要約を新しい順に一覧表示</td></tr>
+<tr><td>F-14</td><td>履歴詳細</td><td>一覧から1件選択 → 要約タイトル・本文・元URL・生成日時を表示</td></tr>
+<tr><td>F-15</td><td>履歴なし表示</td><td>履歴0件の場合「まだ要約履歴がありません」と表示</td></tr></table>
+
+<h2>4. 非機能要件</h2>
+<table><tr><th>項目</th><th>要件</th></tr>
+<tr><td>レスポンス</td><td>要約生成は10秒以内に完了する</td></tr>
+<tr><td>認証</td><td>Supabase Auth を使用（メール+パスワード認証）</td></tr>
+<tr><td>セキュリティ</td><td>未ログインユーザーはログイン画面以外アクセス不可</td></tr>
+<tr><td>レスポンシブ</td><td>スマホでも画面が崩れない</td></tr>
+<tr><td>対応言語</td><td>日本語のみ</td></tr>
+<tr><td>LLM切り替え</td><td>環境変数 LLM_PROVIDER で Claude / ChatGPT を切り替え可能</td></tr></table>
+
+<h2>5. 技術スタック</h2>
+<table><tr><th>レイヤー</th><th>技術</th><th>用途</th></tr>
+<tr><td>フロントエンド</td><td>Next.js（TypeScript）</td><td>UI・ページ表示・ルーティング</td></tr>
+<tr><td>認証</td><td>Supabase Auth</td><td>ユーザー登録・ログイン・セッション管理</td></tr>
+<tr><td>バックエンドAPI</td><td>Python（Vercel Serverless Functions）</td><td>スクレイピング・LLM連携・Slack投稿</td></tr>
+<tr><td>スクレイピング</td><td>requests + BeautifulSoup</td><td>URLからページ内容を抽出</td></tr>
+<tr><td>LLM</td><td>anthropic / openai（Python SDK）</td><td>要約生成</td></tr>
+<tr><td>データベース</td><td>Supabase（PostgreSQL）</td><td>要約履歴・ユーザー情報</td></tr>
+<tr><td>Slack連携</td><td>Slack Incoming Webhook</td><td>要約結果のSlack投稿</td></tr>
+<tr><td>デプロイ</td><td>Vercel</td><td>Next.js + Python API を一括デプロイ</td></tr></table>
+
+<h2>6. スコープ</h2>
+<h3>今回やること</h3>
+<ul>
+<li>ユーザー認証（登録・ログイン・パスワードリセット・削除）</li>
+<li>記事URL入力 → AI要約 → Slackチャンネルに自動投稿</li>
+<li>要約レベル選択（簡単/普通/詳しく）</li>
+<li>要約履歴の保存・一覧・詳細表示</li>
+<li>重複URLの確認フロー</li>
+</ul>
+<h3>今回やらないこと</h3>
+<ul>
+<li>マイページ（プロフィール編集）→ 最低限の設定画面のみ</li>
+<li>おすすめ記事の自動推薦</li>
+<li>複数言語対応</li>
+<li>PDF・動画の要約</li>
+</ul>`
+  },
+
+  doc02: {
+    title: '📝 機能要件書',
+    content: `
+<h1>機能要件書 — Summary Slackbot</h1>
+<p>全11機能の詳細仕様です。各機能ごとに入力・処理フロー・エラー処理を定義しています。</p>
+
+<h2>F-01: 新規登録</h2>
+<table><tr><th>フィールド</th><th>型</th><th>必須</th><th>バリデーション</th></tr>
+<tr><td>メールアドレス</td><td>string</td><td>必須</td><td>メール形式チェック</td></tr>
+<tr><td>パスワード</td><td>string</td><td>必須</td><td>8文字以上</td></tr></table>
+<h3>処理フロー</h3>
+<ol><li>バリデーションチェック</li><li>Supabase Auth の signUp() を呼び出し</li><li>確認メールが自動送信される</li><li>ユーザーがメール内リンクをクリックして認証完了</li></ol>
+<h3>エラー</h3>
+<table><tr><th>エラー</th><th>メッセージ</th></tr>
+<tr><td>メール空欄</td><td>「メールアドレスを入力してください」</td></tr>
+<tr><td>パスワード7文字以下</td><td>「パスワードは8文字以上で入力してください」</td></tr>
+<tr><td>登録済みメール</td><td>「このメールアドレスは既に登録されています」</td></tr></table>
+<hr>
+
+<h2>F-02: ログイン</h2>
+<p>メール + パスワードでログイン → トップ画面に遷移。Supabase Auth の signInWithPassword() を使用。</p>
+<hr>
+
+<h2>F-03〜F-05: パスワードリセット / ログアウト / アカウント削除</h2>
+<ul>
+<li><strong>パスワードリセット</strong>: メール入力 → リセットメール送信 → 新パスワード設定</li>
+<li><strong>ログアウト</strong>: signOut() → ログイン画面にリダイレクト</li>
+<li><strong>アカウント削除</strong>: 確認ダイアログ「本当に削除しますか？」→ 削除実行 → ログイン画面へ</li>
+</ul>
+<hr>
+
+<h2>F-06: 記事要約（メイン機能）</h2>
+<h3>入力</h3>
+<table><tr><th>フィールド</th><th>必須</th><th>説明</th></tr>
+<tr><td>URL</td><td>必須</td><td>要約したい記事のURL</td></tr>
+<tr><td>要約レベル</td><td>任意</td><td>簡単 / 普通（デフォルト） / 詳しく</td></tr></table>
+<h3>要約レベル</h3>
+<table><tr><th>レベル</th><th>出力量</th><th>プロンプト指示</th></tr>
+<tr><td>簡単</td><td>3行程度</td><td>最も重要なポイントを3行で要約</td></tr>
+<tr><td>普通</td><td>5〜8行</td><td>主要なポイントを箇条書きで要約</td></tr>
+<tr><td>詳しく</td><td>15行程度</td><td>詳細な内容を網羅的に要約</td></tr></table>
+<h3>処理フロー</h3>
+<ol><li>URL+要約レベルを入力して「要約する」クリック</li><li>ローディング表示</li><li>Python API に POST</li><li>重複チェック → スクレイピング → LLM要約 → DB保存 → Slack投稿</li><li>画面に要約結果を表示</li></ol>
+<h3>エラー処理</h3>
+<table><tr><th>エラー</th><th>メッセージ</th></tr>
+<tr><td>URL空欄</td><td>「URLを入力してください」</td></tr>
+<tr><td>無効なURL形式</td><td>「正しいURLを入力してください」</td></tr>
+<tr><td>ページが存在しない</td><td>「このページは存在しません」</td></tr>
+<tr><td>スクレイピング失敗</td><td>「この記事の内容を取得できませんでした」</td></tr>
+<tr><td>LLM APIエラー</td><td>「要約の生成に失敗しました。もう一度お試しください」</td></tr>
+<tr><td>Slack投稿失敗</td><td>「Slackへの投稿に失敗しました（要約は保存済み）」</td></tr></table>
+<hr>
+
+<h2>F-07: 重複URLチェック</h2>
+<p>URL入力時にSupabaseで過去の要約を検索。要約済みの場合:</p>
+<ul><li>「再要約する」→ 新しい要約を生成</li><li>「過去の要約を見る」→ 履歴詳細画面に遷移</li><li>「キャンセル」→ 入力画面に戻る</li></ul>
+<hr>
+
+<h2>F-08〜F-09: 履歴一覧・詳細</h2>
+<ul>
+<li><strong>一覧</strong>: 記事タイトル、URL、要約レベル、生成日時を新しい順に表示。0件は「まだ要約履歴がありません」</li>
+<li><strong>詳細</strong>: タイトル、要約本文、元URL、レベル、使用LLM、日時を表示</li>
+</ul>
+<hr>
+
+<h2>F-10〜F-11: 認証ガード / LLM切り替え</h2>
+<ul>
+<li><strong>認証ガード</strong>: ログイン画面以外の全ページでセッションチェック。未ログイン → リダイレクト</li>
+<li><strong>LLM切り替え</strong>: <code>LLM_PROVIDER=anthropic</code> or <code>openai</code> で切り替え。履歴に使用LLMを記録</li>
+</ul>`
+  },
+
+  doc03: {
+    title: '🗺 画面遷移図',
+    content: `
+<h1>画面遷移図</h1>
+<h2>画面一覧</h2>
+<table><tr><th>ID</th><th>画面名</th><th>URL</th><th>認証</th></tr>
+<tr><td>S-01</td><td>ログイン画面</td><td>/login</td><td>不要</td></tr>
+<tr><td>S-02</td><td>新規登録画面</td><td>/register</td><td>不要</td></tr>
+<tr><td>S-03</td><td>パスワードリセット画面</td><td>/reset-password</td><td>不要</td></tr>
+<tr><td>S-04</td><td>トップ画面（要約入力）</td><td>/</td><td>必要</td></tr>
+<tr><td>S-05</td><td>要約結果画面</td><td>/result</td><td>必要</td></tr>
+<tr><td>S-06</td><td>履歴一覧画面</td><td>/history</td><td>必要</td></tr>
+<tr><td>S-07</td><td>履歴詳細画面</td><td>/history/[id]</td><td>必要</td></tr>
+<tr><td>S-08</td><td>設定画面</td><td>/settings</td><td>必要</td></tr></table>
+
+<h2>ビジュアル版</h2>
+<iframe src="screen-transitions.html" height="850" loading="lazy"></iframe>
+
+<h2>遷移パターン</h2>
+<table><tr><th>パターン</th><th>遷移</th></tr>
+<tr><td>初回利用（新規登録）</td><td>ログイン → 新規登録 → (メール認証) → ログイン → トップ</td></tr>
+<tr><td>通常利用（要約）</td><td>ログイン → トップ → (URL入力) → 要約結果 → トップ</td></tr>
+<tr><td>履歴確認</td><td>トップ → 履歴一覧 → 履歴詳細 → 一覧</td></tr>
+<tr><td>パスワード忘れ</td><td>ログイン → パスワードリセット → (メール) → ログイン</td></tr>
+<tr><td>アカウント削除</td><td>トップ → 設定 → (確認ダイアログ) → ログイン</td></tr>
+<tr><td>未ログインアクセス</td><td>任意のURL → ログイン画面にリダイレクト</td></tr></table>`
+  },
+
+  doc04: {
+    title: '🎨 ワイヤーフレーム',
+    content: `
+<h1>ワイヤーフレーム — 全12画面</h1>
+<p>各画面のレイアウト・UI要素の配置です。下のプレビューで実際のデザインを確認できます。</p>
+<h2>画面一覧</h2>
+<table><tr><th>ID</th><th>画面</th><th>含まれるUI要素</th></tr>
+<tr><td>W-01</td><td>ログイン画面</td><td>メール入力、パスワード入力、ログインボタン、新規登録リンク、パスワード忘れリンク</td></tr>
+<tr><td>W-02</td><td>新規登録画面</td><td>メール入力、パスワード入力、確認入力、登録ボタン、バリデーションエラー表示</td></tr>
+<tr><td>W-03</td><td>トップ画面</td><td>ヘッダーナビ、URL入力欄、要約レベル選択、要約ボタン</td></tr>
+<tr><td>W-04</td><td>ローディング状態</td><td>スピナー、「記事の要約を生成しています...」テキスト</td></tr>
+<tr><td>W-05</td><td>要約結果画面</td><td>タイトル、要約本文（箇条書き）、元URL、レベルバッジ、Slack投稿済み表示</td></tr>
+<tr><td>W-06</td><td>履歴一覧画面</td><td>カードリスト（タイトル、URL、レベルバッジ、日時）</td></tr>
+<tr><td>W-07</td><td>履歴詳細画面</td><td>タイトル、要約本文、URL、レベル、LLM、日時、戻るリンク</td></tr>
+<tr><td>W-08</td><td>履歴なし状態</td><td>空アイコン、「まだ要約履歴がありません」、トップに戻るボタン</td></tr>
+<tr><td>W-09</td><td>設定画面</td><td>メールアドレス表示、アカウント削除ボタン</td></tr>
+<tr><td>W-10</td><td>削除確認ダイアログ</td><td>警告テキスト、削除ボタン、キャンセルボタン</td></tr>
+<tr><td>W-11</td><td>エラー状態</td><td>エラーアイコン、エラーメッセージ、トップに戻るボタン</td></tr>
+<tr><td>W-12</td><td>重複URL確認</td><td>確認テキスト、再要約ボタン、過去の要約を見るボタン、キャンセル</td></tr></table>
+
+<h2>プレビュー</h2>
+<iframe src="wireframes.html" height="2400" loading="lazy"></iframe>`
+  },
+
+  doc05: {
+    title: '🗄 ER図',
+    content: `
+<h1>ER図 — データベース設計</h1>
+<h2>テーブル構成</h2>
+<table><tr><th>テーブル</th><th>管理</th><th>説明</th></tr>
+<tr><td><strong>auth.users</strong></td><td>Supabase Auth（自動）</td><td>ユーザー情報（メール、パスワード等）。自分で作成する必要なし</td></tr>
+<tr><td><strong>summaries</strong></td><td>自分で作成</td><td>要約履歴。user_id で auth.users と紐づけ</td></tr></table>
+
+<h2>リレーション</h2>
+<p><strong>auth.users 1 : N summaries</strong>（1人のユーザーが複数の要約を持つ）</p>
+
+<h2>summaries テーブル詳細</h2>
+<table><tr><th>カラム</th><th>型</th><th>説明</th></tr>
+<tr><td><strong>id</strong> (PK)</td><td>UUID</td><td>主キー（自動生成）</td></tr>
+<tr><td><strong>user_id</strong> (FK)</td><td>UUID</td><td>auth.users.id への外部キー</td></tr>
+<tr><td>url</td><td>TEXT</td><td>要約した記事のURL</td></tr>
+<tr><td>title</td><td>TEXT</td><td>記事のタイトル</td></tr>
+<tr><td>summary</td><td>TEXT</td><td>AIが生成した要約本文</td></tr>
+<tr><td>summary_level</td><td>TEXT</td><td>簡単 / 普通 / 詳しく</td></tr>
+<tr><td>llm_provider</td><td>TEXT</td><td>anthropic / openai</td></tr>
+<tr><td>created_at</td><td>TIMESTAMPTZ</td><td>作成日時</td></tr></table>
+
+<h2>ビジュアル版</h2>
+<iframe src="er-diagram.html" height="600" loading="lazy"></iframe>`
+  },
+
+  doc06: {
+    title: '💾 テーブル作成SQL',
+    content: `
+<h1>テーブル作成SQL</h1>
+<p>Supabaseで実行するSQL。auth.usersはSupabase Authが自動管理するため、summariesテーブルのみ作成します。</p>
+<pre><code>-- summaries テーブル（要約履歴）
+CREATE TABLE summaries (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    url TEXT NOT NULL,
+    title TEXT,
+    summary TEXT NOT NULL,
+    summary_level TEXT DEFAULT '普通'
+        CHECK (summary_level IN ('簡単', '普通', '詳しく')),
+    llm_provider TEXT DEFAULT 'anthropic'
+        CHECK (llm_provider IN ('anthropic', 'openai')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
+-- インデックス
+CREATE INDEX idx_summaries_user_id ON summaries(user_id);
+CREATE INDEX idx_summaries_user_url ON summaries(user_id, url);
+CREATE INDEX idx_summaries_created_at ON summaries(created_at DESC);
+
+-- Row Level Security（RLS）
+ALTER TABLE summaries ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own summaries"
+    ON summaries FOR SELECT
+    USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own summaries"
+    ON summaries FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own summaries"
+    ON summaries FOR DELETE
+    USING (auth.uid() = user_id);</code></pre>
+
+<h2>ポイント</h2>
+<ul>
+<li><strong>ON DELETE CASCADE</strong>: ユーザーが削除されると、その要約も自動削除</li>
+<li><strong>CHECK制約</strong>: summary_level は「簡単/普通/詳しく」のみ許可</li>
+<li><strong>RLS</strong>: ユーザーは自分のデータのみ閲覧・作成・削除可能</li>
+<li><strong>インデックス</strong>: ユーザー検索、重複URL検索、日時ソートを高速化</li>
+</ul>`
+  },
+
+  doc07: {
+    title: '🔌 API設計書',
+    content: `
+<h1>API設計書</h1>
+<h2>API一覧</h2>
+<table><tr><th>メソッド</th><th>エンドポイント</th><th>説明</th><th>認証</th></tr>
+<tr><td>POST</td><td>/api/summarize</td><td>記事をスクレイピング → LLM要約 → Slack投稿</td><td>必要</td></tr>
+<tr><td>POST</td><td>/api/check-url</td><td>重複URLチェック</td><td>必要</td></tr>
+<tr><td>GET</td><td>/api/history</td><td>要約履歴一覧取得</td><td>必要</td></tr>
+<tr><td>GET</td><td>/api/history/[id]</td><td>要約履歴詳細取得</td><td>必要</td></tr>
+<tr><td>GET</td><td>/api/health</td><td>ヘルスチェック</td><td>不要</td></tr></table>
+
+<h2>POST /api/summarize（メインAPI）</h2>
+<h3>リクエスト</h3>
+<pre><code>{
+  "url": "https://example.com/article",
+  "summary_level": "普通"
+}</code></pre>
+<h3>レスポンス（成功）</h3>
+<pre><code>{
+  "id": "uuid-xxx",
+  "title": "AIで変わるビジネスの未来",
+  "summary": "・AI技術は2026年に急速に進化\\n...",
+  "summary_level": "普通",
+  "llm_provider": "anthropic",
+  "slack_posted": true,
+  "created_at": "2026-03-04T14:30:00Z"
+}</code></pre>
+<h3>エラー</h3>
+<table><tr><th>ステータス</th><th>エラー</th><th>説明</th></tr>
+<tr><td>400</td><td>invalid_url</td><td>URL形式が不正</td></tr>
+<tr><td>401</td><td>unauthorized</td><td>未認証</td></tr>
+<tr><td>404</td><td>page_not_found</td><td>ページが存在しない</td></tr>
+<tr><td>422</td><td>scrape_failed</td><td>スクレイピング失敗</td></tr>
+<tr><td>500</td><td>llm_error</td><td>LLM API失敗</td></tr>
+<tr><td>504</td><td>timeout</td><td>10秒超過</td></tr></table>
+
+<h2>内部モジュール構成</h2>
+<pre><code>api/
+├── summarize.py      # メインAPI
+├── check_url.py      # 重複チェック
+├── history.py        # 履歴取得
+├── health.py         # ヘルスチェック
+└── lib/
+    ├── scraper.py    # スクレイピング
+    ├── llm.py        # LLM要約
+    ├── slack.py      # Slack投稿
+    ├── database.py   # DB操作
+    └── auth.py       # トークン検証</code></pre>
+
+<h2>処理シーケンス</h2>
+<pre><code>ブラウザ → Next.js → Python API → Supabase（認証チェック）
+                                  → スクレイピング
+                                  → LLM API（要約生成）
+                                  → Supabase（DB保存）
+                                  → Slack（Webhook投稿）
+                              ← 要約結果を返す
+         ← 画面に表示</code></pre>
+
+<h2>環境変数</h2>
+<table><tr><th>変数名</th><th>説明</th></tr>
+<tr><td>NEXT_PUBLIC_SUPABASE_URL</td><td>SupabaseプロジェクトURL</td></tr>
+<tr><td>NEXT_PUBLIC_SUPABASE_ANON_KEY</td><td>Supabase匿名キー</td></tr>
+<tr><td>SUPABASE_SERVICE_ROLE_KEY</td><td>Supabaseサービスロールキー</td></tr>
+<tr><td>SLACK_WEBHOOK_URL</td><td>Slack Incoming Webhook URL</td></tr>
+<tr><td>OPENAI_API_KEY</td><td>OpenAI APIキー</td></tr>
+<tr><td>ANTHROPIC_API_KEY</td><td>Anthropic APIキー</td></tr>
+<tr><td>LLM_PROVIDER</td><td>anthropic or openai</td></tr></table>`
+  },
+
+  doc08: {
+    title: '🧩 コンポーネント一覧',
+    content: `
+<h1>コンポーネント一覧</h1>
+
+<h2>1. フロントエンド — ページ（9件）</h2>
+<table><tr><th>ID</th><th>ファイル</th><th>URL</th><th>説明</th></tr>
+<tr><td>P-01</td><td>src/app/login/page.tsx</td><td>/login</td><td>ログイン画面</td></tr>
+<tr><td>P-02</td><td>src/app/register/page.tsx</td><td>/register</td><td>新規登録画面</td></tr>
+<tr><td>P-03</td><td>src/app/reset-password/page.tsx</td><td>/reset-password</td><td>パスワードリセット</td></tr>
+<tr><td>P-04</td><td>src/app/page.tsx</td><td>/</td><td>トップ画面（要約入力）</td></tr>
+<tr><td>P-05</td><td>src/app/result/page.tsx</td><td>/result</td><td>要約結果画面</td></tr>
+<tr><td>P-06</td><td>src/app/history/page.tsx</td><td>/history</td><td>履歴一覧</td></tr>
+<tr><td>P-07</td><td>src/app/history/[id]/page.tsx</td><td>/history/[id]</td><td>履歴詳細</td></tr>
+<tr><td>P-08</td><td>src/app/settings/page.tsx</td><td>/settings</td><td>設定画面</td></tr>
+<tr><td>P-09</td><td>src/app/layout.tsx</td><td>—</td><td>共通レイアウト</td></tr></table>
+
+<h2>2. フロントエンド — UIコンポーネント（10件）</h2>
+<table><tr><th>ID</th><th>ファイル</th><th>説明</th><th>使用画面</th></tr>
+<tr><td>C-01</td><td>Header.tsx</td><td>ヘッダー（ナビ、ログアウト）</td><td>認証済み全画面</td></tr>
+<tr><td>C-02</td><td>SummaryForm.tsx</td><td>URL入力 + レベル選択</td><td>トップ</td></tr>
+<tr><td>C-03</td><td>SummaryResult.tsx</td><td>要約結果表示</td><td>要約結果</td></tr>
+<tr><td>C-04</td><td>HistoryList.tsx</td><td>履歴一覧リスト</td><td>履歴一覧</td></tr>
+<tr><td>C-05</td><td>HistoryDetail.tsx</td><td>履歴詳細表示</td><td>履歴詳細</td></tr>
+<tr><td>C-06</td><td>Loading.tsx</td><td>ローディング表示</td><td>トップ（処理中）</td></tr>
+<tr><td>C-07</td><td>ErrorMessage.tsx</td><td>エラーメッセージ</td><td>全画面</td></tr>
+<tr><td>C-08</td><td>ConfirmDialog.tsx</td><td>確認ダイアログ</td><td>設定、トップ</td></tr>
+<tr><td>C-09</td><td>EmptyState.tsx</td><td>空状態表示</td><td>履歴一覧</td></tr>
+<tr><td>C-10</td><td>LevelBadge.tsx</td><td>レベルバッジ</td><td>履歴系</td></tr></table>
+
+<h2>3. バックエンド — APIエンドポイント（4件）</h2>
+<table><tr><th>ID</th><th>ファイル</th><th>エンドポイント</th><th>説明</th></tr>
+<tr><td>A-01</td><td>api/summarize.py</td><td>POST /api/summarize</td><td>記事要約メインAPI</td></tr>
+<tr><td>A-02</td><td>api/check_url.py</td><td>POST /api/check-url</td><td>重複URLチェック</td></tr>
+<tr><td>A-03</td><td>api/history.py</td><td>GET /api/history</td><td>履歴取得</td></tr>
+<tr><td>A-04</td><td>api/health.py</td><td>GET /api/health</td><td>ヘルスチェック</td></tr></table>
+
+<h2>4. バックエンド — 内部モジュール（5件）</h2>
+<table><tr><th>ID</th><th>ファイル</th><th>説明</th></tr>
+<tr><td>M-01</td><td>api/lib/scraper.py</td><td>スクレイピング（requests + BeautifulSoup）</td></tr>
+<tr><td>M-02</td><td>api/lib/llm.py</td><td>LLM要約（Claude / ChatGPT）</td></tr>
+<tr><td>M-03</td><td>api/lib/slack.py</td><td>Slack Webhook投稿</td></tr>
+<tr><td>M-04</td><td>api/lib/database.py</td><td>Supabase DB操作</td></tr>
+<tr><td>M-05</td><td>api/lib/auth.py</td><td>トークン検証</td></tr></table>
+
+<h2>5. 依存ライブラリ</h2>
+<table><tr><th>Node.js (package.json)</th><th>Python (requirements.txt)</th></tr>
+<tr><td>next, react, react-dom</td><td>requests, beautifulsoup4</td></tr>
+<tr><td>@supabase/supabase-js</td><td>anthropic, openai</td></tr>
+<tr><td>typescript</td><td>supabase</td></tr></table>`
+  },
+
+  doc09: {
+    title: '🧪 テスト仕様書',
+    content: `
+<h1>テスト仕様書 — 全65テストケース</h1>
+<h2>テスト概要</h2>
+<table><tr><th>カテゴリ</th><th>テスト数</th><th>正常</th><th>異常</th><th>境界</th></tr>
+<tr><td>認証（AUTH）</td><td>15</td><td>6</td><td>6</td><td>3</td></tr>
+<tr><td>要約（SUM）</td><td>16</td><td>5</td><td>8</td><td>3</td></tr>
+<tr><td>履歴（HIST）</td><td>10</td><td>5</td><td>3</td><td>2</td></tr>
+<tr><td>Slack投稿（SLK）</td><td>6</td><td>2</td><td>3</td><td>1</td></tr>
+<tr><td>API共通（API）</td><td>8</td><td>2</td><td>4</td><td>2</td></tr>
+<tr><td>UI（UI）</td><td>5</td><td>4</td><td>0</td><td>1</td></tr>
+<tr><td>ヘルスチェック</td><td>1</td><td>1</td><td>0</td><td>0</td></tr>
+<tr><td>削除（DEL）</td><td>4</td><td>3</td><td>1</td><td>0</td></tr>
+<tr style="font-weight:bold;"><td>合計</td><td>65</td><td>28</td><td>25</td><td>12</td></tr></table>
+
+<h2>1. 認証（AUTH）— 15件</h2>
+<table><tr><th>ID</th><th>種別</th><th>テスト内容</th><th>期待結果</th></tr>
+<tr><td>AUTH-01</td><td style="color:#4caf50;">正常</td><td>有効なメール+パスワード(8文字以上)で新規登録</td><td>登録成功、確認メールが届く</td></tr>
+<tr><td>AUTH-02</td><td style="color:#4caf50;">正常</td><td>確認メールのリンクをクリック</td><td>メール認証完了</td></tr>
+<tr><td>AUTH-03</td><td style="color:#4caf50;">正常</td><td>登録済みメール+正しいパスワードでログイン</td><td>ログイン成功、トップ画面に遷移</td></tr>
+<tr><td>AUTH-07</td><td style="color:#f44336;">異常</td><td>メール欄を空でログイン</td><td>「メールアドレスを入力してください」表示</td></tr>
+<tr><td>AUTH-09</td><td style="color:#f44336;">異常</td><td>存在しないメールでログイン</td><td>エラーメッセージ表示</td></tr>
+<tr><td>AUTH-13</td><td style="color:#ff9800;">境界</td><td>パスワード7文字で新規登録</td><td>「8文字以上」エラー表示</td></tr>
+<tr><td>AUTH-14</td><td style="color:#ff9800;">境界</td><td>パスワード8文字ちょうどで登録</td><td>登録成功</td></tr></table>
+<p style="color:var(--text-muted);font-size:13px;">※ 一部抜粋。全15件は docs/test-specification.md を参照</p>
+
+<h2>2. 要約（SUM）— 16件</h2>
+<table><tr><th>ID</th><th>種別</th><th>テスト内容</th><th>期待結果</th></tr>
+<tr><td>SUM-01</td><td style="color:#4caf50;">正常</td><td>有効なURLをレベル「普通」で要約</td><td>5〜8行の要約が表示</td></tr>
+<tr><td>SUM-02</td><td style="color:#4caf50;">正常</td><td>レベル「簡単」で要約</td><td>3行程度の要約が表示</td></tr>
+<tr><td>SUM-03</td><td style="color:#4caf50;">正常</td><td>レベル「詳しく」で要約</td><td>15行程度の要約が表示</td></tr>
+<tr><td>SUM-06</td><td style="color:#f44336;">異常</td><td>URL欄を空で要約ボタン</td><td>「URLを入力してください」表示</td></tr>
+<tr><td>SUM-08</td><td style="color:#f44336;">異常</td><td>存在しないURL(404)</td><td>「このページは存在しません」表示</td></tr>
+<tr><td>SUM-10</td><td style="color:#f44336;">異常</td><td>LLM APIキーが無効</td><td>「要約の生成に失敗しました」表示</td></tr></table>
+<p style="color:var(--text-muted);font-size:13px;">※ 一部抜粋。全16件は docs/test-specification.md を参照</p>
+
+<h2>3〜8. その他カテゴリ</h2>
+<ul>
+<li><strong>履歴（HIST）10件</strong>: 一覧表示、詳細表示、0件表示、重複URL確認</li>
+<li><strong>Slack（SLK）6件</strong>: 投稿確認、フォーマット確認、Webhook無効時</li>
+<li><strong>API（API）8件</strong>: 認証チェック、不正トークン、メソッド制限</li>
+<li><strong>UI（UI）5件</strong>: PC/タブレット/スマホ表示、ナビ動作</li>
+<li><strong>削除（DEL）4件</strong>: 削除実行、キャンセル、削除後の確認</li>
+</ul>`
+  },
+
+  doc10: {
+    title: '📅 開発スケジュール',
+    content: `
+<h1>開発スケジュール — 5日間</h1>
+<p>1Dayあたり <strong>2〜3時間</strong>、合計 <strong>10〜15時間</strong></p>
+
+<h2>Day1: 環境構築 + 認証機能</h2>
+<p><strong>ゴール: ログイン・新規登録ができてトップ画面が表示される状態</strong></p>
+<table><tr><th>タスク</th><th>成果物</th></tr>
+<tr><td>Supabaseプロジェクト作成、create_tables.sql実行</td><td>DBテーブル作成完了</td></tr>
+<tr><td>.env.localにSupabase URL・キーを設定</td><td>.env.local</td></tr>
+<tr><td>ログイン画面・新規登録画面のUI</td><td>login/page.tsx, register/page.tsx</td></tr>
+<tr><td>supabase.tsでsignUp/signIn/signOut</td><td>src/lib/supabase.ts</td></tr>
+<tr><td>middleware.tsで未ログインリダイレクト</td><td>src/middleware.ts</td></tr></table>
+<hr>
+
+<h2>Day2: 要約機能（スクレイピング + LLM）</h2>
+<p><strong>ゴール: URLを入力してAIの要約が画面に表示される状態 ← 核心機能</strong></p>
+<table><tr><th>タスク</th><th>成果物</th></tr>
+<tr><td>URL入力フォーム + 要約レベル選択</td><td>SummaryForm.tsx</td></tr>
+<tr><td>スクレイピングAPI（requests + BeautifulSoup）</td><td>api/lib/scraper.py</td></tr>
+<tr><td>LLM要約API（Claude/ChatGPT対応）</td><td>api/lib/llm.py</td></tr>
+<tr><td>要約メインAPI</td><td>api/summarize.py</td></tr>
+<tr><td>要約結果画面</td><td>src/app/result/page.tsx</td></tr></table>
+<hr>
+
+<h2>Day3: Slack投稿 + DB保存 + 履歴</h2>
+<p><strong>ゴール: 要約がSlackに投稿され、履歴画面で過去の要約が見られる状態</strong></p>
+<table><tr><th>タスク</th><th>成果物</th></tr>
+<tr><td>Slack Incoming Webhook設定</td><td>.env.local（更新）</td></tr>
+<tr><td>Slack投稿モジュール</td><td>api/lib/slack.py</td></tr>
+<tr><td>DB保存モジュール</td><td>api/lib/database.py</td></tr>
+<tr><td>履歴一覧画面 + API</td><td>history/page.tsx, api/history.py</td></tr>
+<tr><td>履歴詳細画面</td><td>history/[id]/page.tsx</td></tr>
+<tr><td>ヘッダーナビ</td><td>Header.tsx</td></tr></table>
+<hr>
+
+<h2>Day4: 追加機能 + 仕上げ</h2>
+<p><strong>ゴール: 重複URLチェック、設定画面、レスポンシブ対応が完了</strong></p>
+<table><tr><th>タスク</th><th>成果物</th></tr>
+<tr><td>重複URLチェック + 確認ダイアログ</td><td>api/check_url.py, ConfirmDialog.tsx</td></tr>
+<tr><td>設定画面（アカウント削除）</td><td>settings/page.tsx</td></tr>
+<tr><td>パスワードリセット画面</td><td>reset-password/page.tsx</td></tr>
+<tr><td>エラーハンドリング統一</td><td>ErrorMessage.tsx</td></tr>
+<tr><td>レスポンシブ対応</td><td>CSS修正</td></tr></table>
+<hr>
+
+<h2>Day5: デプロイ + テスト + デモ準備</h2>
+<p><strong>ゴール: Vercelにデプロイして本番環境で動く状態</strong></p>
+<table><tr><th>タスク</th><th>成果物</th></tr>
+<tr><td>Vercelデプロイ、環境変数設定</td><td>本番環境URL</td></tr>
+<tr><td>各種エラーケーステスト</td><td>テスト結果</td></tr>
+<tr><td>バグ修正 + UI調整</td><td>コード修正</td></tr>
+<tr><td>デモ用記事URL準備、発表の流れ確認</td><td>デモ手順書</td></tr></table>
+
+<h2>リスクと対策</h2>
+<table><tr><th>リスク</th><th>対策</th></tr>
+<tr><td>Supabase Auth設定でつまずく</td><td>公式ドキュメント参照、最小限の設定で進める</td></tr>
+<tr><td>スクレイピングが失敗するサイトがある</td><td>エラーハンドリングで対応、対応URLを限定</td></tr>
+<tr><td>LLM APIの応答が遅い</td><td>ローディング表示 + 10秒タイムアウト</td></tr>
+<tr><td>Next.jsの実装に時間がかかる</td><td>LLM要約を最優先、UIは最小限でリリース</td></tr></table>`
+  }
+};
+
+function openModal(id) {
+  const doc = docs[id];
+  if (!doc) return;
+  document.getElementById('modalTitle').innerHTML = doc.title;
+  document.getElementById('modalBody').innerHTML = doc.content;
+  document.getElementById('modalOverlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeModal();
+});
+</script>
+
+</body>
+</html>
