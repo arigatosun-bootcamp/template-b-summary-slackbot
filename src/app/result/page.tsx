@@ -7,16 +7,17 @@ import type { SummarizeResponse } from "@/lib/api";
 
 export default function ResultPage() {
   const router = useRouter();
-  const [result, setResult] = useState<SummarizeResponse | null>(null);
+  const [result, setResult] = useState<SummarizeResponse | null>(() => {
+    if (typeof window === "undefined") return null;
+    const stored = sessionStorage.getItem("summaryResult");
+    return stored ? JSON.parse(stored) : null;
+  });
 
   useEffect(() => {
-    const stored = sessionStorage.getItem("summaryResult");
-    if (!stored) {
+    if (!result) {
       router.push("/");
-      return;
     }
-    setResult(JSON.parse(stored));
-  }, [router]);
+  }, [result, router]);
 
   if (!result) {
     return null;
