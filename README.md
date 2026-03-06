@@ -103,28 +103,51 @@ http://localhost:3000 をブラウザで開いて確認
 ```
 ├─ .github/              # PR/Issueテンプレ、CI
 ├─ api/                  # Python Serverless Functions（Vercel）
-│   ├── scrape.py        # スクレイピングAPI
-│   ├── summarize.py     # LLM要約API
-│   └── slack.py         # Slack投稿API
-├─ docs/logic-gate/      # L1〜L3 Logic Gateテンプレ
+│   ├── summarize.py     # 要約APIエンドポイント（スクレイピング→LLM要約→Slack投稿→DB保存）
+│   ├── history.py       # 要約履歴取得API
+│   ├── check_duplicate.py  # URL重複チェックAPI
+│   └── lib/             # 共通モジュール
+│       ├── scraper.py   # スクレイピング（requests + BeautifulSoup）
+│       ├── llm.py       # LLM要約（OpenAI / Anthropic）
+│       ├── slack.py     # Slack Incoming Webhook投稿
+│       └── database.py  # Supabase DB操作
+├─ scripts/              # ローカル開発用スクリプト
+│   └── summarize_local.py
+├─ docs/                 # 設計書・仕様書
 ├─ src/                  # Next.js アプリケーションコード（TypeScript）
-│   └── app/
-│       ├── layout.tsx
-│       └── page.tsx
+│   ├── app/
+│   │   ├── layout.tsx       # 共通レイアウト
+│   │   ├── page.tsx         # トップページ（要約フォーム）
+│   │   ├── login/           # ログインページ
+│   │   ├── register/        # 新規登録ページ
+│   │   ├── result/          # 要約結果ページ
+│   │   ├── history/         # 要約履歴ページ
+│   │   ├── settings/        # 設定ページ
+│   │   ├── auth/callback/   # メール認証コールバック
+│   │   └── api/             # ローカル開発用APIプロキシ
+│   ├── components/
+│   │   ├── Header.tsx       # ヘッダー（ハンバーガーメニュー対応）
+│   │   ├── SummaryForm.tsx  # 要約フォーム
+│   │   └── Loading.tsx      # ローディング表示
+│   └── lib/
+│       ├── api.ts           # Python APIクライアント
+│       ├── supabase.ts      # ブラウザ用Supabaseクライアント
+│       └── supabase-server.ts  # サーバー用Supabaseクライアント
 ├─ .env.example          # 環境変数テンプレ
 ├─ package.json          # Node.js 依存管理
 ├─ requirements.txt      # Python 依存管理
-└─ vercel.json           # Vercel設定（任意）
+└─ vercel.json           # Vercel設定
 ```
 
 ### `api/` ディレクトリについて
 
 `api/` 配下の `.py` ファイルは、Vercelが自動的にサーバーレス関数として認識します。
 
-- `api/scrape.py` → `POST /api/scrape` でアクセス可能
-- `api/summarize.py` → `POST /api/summarize` でアクセス可能
+- `api/summarize.py` → `POST /api/summarize`（スクレイピング→要約→Slack投稿→DB保存を1回のリクエストで実行）
+- `api/history.py` → `GET /api/history`（要約履歴の取得）
+- `api/check_duplicate.py` → `GET /api/check_duplicate`（URL重複チェック）
 
-フロントエンド（Next.js）から `fetch('/api/scrape', ...)` で呼び出せます。
+フロントエンド（Next.js）から `fetch('/api/summarize', ...)` で呼び出せます。
 
 ---
 

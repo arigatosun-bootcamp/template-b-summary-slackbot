@@ -1,25 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import type { SummarizeResponse } from "@/lib/api";
 
+function useSessionResult(): SummarizeResponse | null {
+  return useSyncExternalStore(
+    (callback) => {
+      window.addEventListener("storage", callback);
+      return () => window.removeEventListener("storage", callback);
+    },
+    () => {
+      const stored = sessionStorage.getItem("summaryResult");
+      return stored ? JSON.parse(stored) : null;
+    },
+    () => null
+  );
+}
+
 export default function ResultPage() {
   const router = useRouter();
-  const [result, setResult] = useState<SummarizeResponse | null>(() => {
-    if (typeof window === "undefined") return null;
-    const stored = sessionStorage.getItem("summaryResult");
-    return stored ? JSON.parse(stored) : null;
-  });
-
-  useEffect(() => {
-    if (!result) {
-      router.push("/");
-    }
-  }, [result, router]);
+  const result = useSessionResult();
 
   if (!result) {
+    if (typeof window !== "undefined") {
+      router.push("/");
+    }
     return null;
   }
 
@@ -53,7 +60,14 @@ export default function ResultPage() {
           >
             {result.url}
           </a>
-          <span style={styles.levelBadge}>{result.level}</span>
+          <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+            <span style={styles.levelBadge}>{result.level}</span>
+            {result.type === "site" && (
+              <span style={styles.siteBadge}>
+                サイト全体（{result.page_count}ページ）
+              </span>
+            )}
+          </div>
         </div>
 
         {/* 要約本文 */}
@@ -107,12 +121,20 @@ const styles: { [key: string]: React.CSSProperties } = {
   },
   levelBadge: {
     display: "inline-block",
-    marginTop: "8px",
     padding: "4px 12px",
     fontSize: "12px",
     fontWeight: 600,
     color: "#4f46e5",
     background: "#eef2ff",
+    borderRadius: "20px",
+  },
+  siteBadge: {
+    display: "inline-block",
+    padding: "4px 12px",
+    fontSize: "12px",
+    fontWeight: 600,
+    color: "#059669",
+    background: "#ecfdf5",
     borderRadius: "20px",
   },
   summaryCard: {

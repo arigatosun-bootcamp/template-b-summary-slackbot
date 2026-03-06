@@ -16,7 +16,8 @@ import json
 import os
 from http.server import BaseHTTPRequestHandler
 from api.lib.scraper import fetch_article
-from api.lib.llm import summarize
+from api.lib.llm import summarize, summarize_site
+from api.lib.crawler import crawl_site
 from api.lib.slack import post_to_slack
 from api.lib.database import save_summary
 
@@ -40,6 +41,7 @@ class handler(BaseHTTPRequestHandler):
             # パラメータ取得
             url = data.get("url", "").strip()
             level = data.get("level", "普通").strip()
+            summary_type = data.get("type", "page").strip()
 
             if not url:
                 self._send_error(400, "URLを入力してください")
@@ -49,25 +51,42 @@ class handler(BaseHTTPRequestHandler):
                 self._send_error(400, "要約レベルは「簡単」「普通」「詳しく」のいずれかを指定してください")
                 return
 
-            # スクレイピング
-            article = fetch_article(url)
+            if summary_type == "site":
+                # サイト全体要約モード
+                site_data = crawl_site(url)
+                title = site_data["site_name"]
+                summary = summarize_site(
+                    pages=site_data["pages"],
+                    site_name=site_data["site_name"],
+                    level=level,
+                )
+                page_count = len(site_data["pages"])
+            else:
+                # ページ要約モード（従来）
+                article = fetch_article(url)
+                title = article["title"]
+                summary = summarize(
+                    content=article["content"],
+                    title=article["title"],
+                    level=level,
+                )
+                page_count = 1
 
-            # LLM要約
-            summary = summarize(
-                content=article["content"],
-                title=article["title"],
-                level=level,
-            )
-
-            # Slack投稿（Webhook URLが設定されている場合のみ）
+            # Slack投稿
             slack_error = None
-            if os.environ.get("SLACK_WEBHOOK_URL"):
+            webhook_urls = data.get("webhook_urls", [])
+            # フロントから指定がなければ環境変数を使用
+            if not webhook_urls and os.environ.get("SLACK_WEBHOOK_URL"):
+                webhook_urls = [os.environ.get("SLACK_WEBHOOK_URL")]
+
+            if webhook_urls:
                 try:
                     post_to_slack(
-                        title=article["title"],
+                        title=title,
                         summary=summary,
                         url=url,
                         level=level,
+                        webhook_urls=webhook_urls,
                     )
                 except Exception as e:
                     slack_error = str(e)
@@ -83,7 +102,7 @@ class handler(BaseHTTPRequestHandler):
                     result = save_summary(
                         user_id=user_id,
                         url=url,
-                        title=article["title"],
+                        title=title,
                         summary=summary,
                         level=level,
                         llm_provider=os.environ.get("LLM_PROVIDER", "openai"),
@@ -91,14 +110,16 @@ class handler(BaseHTTPRequestHandler):
                     )
                     saved_id = result.get("id")
                 except Exception:
-                    pass  # DB保存失敗は要約結果の返却を妨げない
+                    pass
 
             # 成功レスポンス
             response_data = {
-                "title": article["title"],
+                "title": title,
                 "summary": summary,
                 "url": url,
                 "level": level,
+                "type": summary_type,
+                "page_count": page_count,
             }
             if saved_id:
                 response_data["id"] = saved_id

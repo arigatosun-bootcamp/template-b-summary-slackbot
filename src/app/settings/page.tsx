@@ -5,6 +5,25 @@ import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import { createClient } from "@/lib/supabase";
 
+interface SlackTarget {
+  id: string;
+  name: string;
+  webhookUrl: string;
+}
+
+function loadSlackTargets(): SlackTarget[] {
+  if (typeof window === "undefined") return [];
+  const stored = localStorage.getItem("slackTargets");
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 export default function SettingsPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -18,6 +37,12 @@ export default function SettingsPage() {
     return "普通";
   });
   const [saved, setSaved] = useState(false);
+
+  // Slack投稿先管理
+  const [slackTargets, setSlackTargets] = useState<SlackTarget[]>(() => loadSlackTargets());
+  const [newName, setNewName] = useState("");
+  const [newWebhookUrl, setNewWebhookUrl] = useState("");
+  const [slackError, setSlackError] = useState("");
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -34,8 +59,37 @@ export default function SettingsPage() {
 
   const handleSave = () => {
     localStorage.setItem("defaultLevel", defaultLevel);
+    localStorage.setItem("slackTargets", JSON.stringify(slackTargets));
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handleAddSlack = () => {
+    setSlackError("");
+    if (!newName.trim()) {
+      setSlackError("表示名を入力してください");
+      return;
+    }
+    if (!newWebhookUrl.trim() || !newWebhookUrl.startsWith("https://hooks.slack.com/")) {
+      setSlackError("正しいSlack Webhook URLを入力してください");
+      return;
+    }
+
+    const newTarget: SlackTarget = {
+      id: Date.now().toString(),
+      name: newName.trim(),
+      webhookUrl: newWebhookUrl.trim(),
+    };
+
+    setSlackTargets([...slackTargets, newTarget]);
+    setNewName("");
+    setNewWebhookUrl("");
+    setSaved(false);
+  };
+
+  const handleRemoveSlack = (id: string) => {
+    setSlackTargets(slackTargets.filter((t) => t.id !== id));
+    setSaved(false);
   };
 
   return (
@@ -83,25 +137,67 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        {/* Slack投稿先管理 */}
+        <div style={styles.section}>
+          <h3 style={styles.sectionTitle}>Slack投稿先</h3>
+          <p style={styles.description}>
+            要約を投稿するSlackチャンネルを複数登録できます。
+            要約時に投稿先を選択できます。
+          </p>
+
+          {/* デフォルト（環境変数） */}
+          <div style={styles.slackItem}>
+            <div>
+              <span style={styles.slackName}>デフォルト</span>
+              <span style={styles.slackDefault}>（環境変数で設定）</span>
+            </div>
+          </div>
+
+          {/* 追加された投稿先 */}
+          {slackTargets.map((target) => (
+            <div key={target.id} style={styles.slackItem}>
+              <div>
+                <span style={styles.slackName}>{target.name}</span>
+                <span style={styles.slackUrl}>
+                  {target.webhookUrl.substring(0, 40)}...
+                </span>
+              </div>
+              <button
+                onClick={() => handleRemoveSlack(target.id)}
+                style={styles.removeButton}
+              >
+                削除
+              </button>
+            </div>
+          ))}
+
+          {/* 新規追加フォーム */}
+          <div style={styles.addForm}>
+            <input
+              type="text"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="表示名（例: 開発チーム）"
+              style={styles.addInput}
+            />
+            <input
+              type="text"
+              value={newWebhookUrl}
+              onChange={(e) => setNewWebhookUrl(e.target.value)}
+              placeholder="Webhook URL（https://hooks.slack.com/...）"
+              style={styles.addInput}
+            />
+            {slackError && <p style={styles.slackError}>{slackError}</p>}
+            <button onClick={handleAddSlack} style={styles.addButton}>
+              投稿先を追加
+            </button>
+          </div>
+        </div>
+
         {/* 保存ボタン */}
         <button onClick={handleSave} style={styles.saveButton}>
           {saved ? "保存しました" : "設定を保存"}
         </button>
-
-        {/* Slack連携情報 */}
-        <div style={styles.section}>
-          <h3 style={styles.sectionTitle}>Slack連携</h3>
-          <div style={styles.infoRow}>
-            <span style={styles.infoLabel}>投稿先</span>
-            <span style={styles.infoValue}>
-              {process.env.NEXT_PUBLIC_SLACK_CHANNEL || "環境変数で設定済み"}
-            </span>
-          </div>
-          <p style={styles.description}>
-            Slack Webhook URLは環境変数（SLACK_WEBHOOK_URL）で管理されています。
-            変更する場合は .env.local を編集してください。
-          </p>
-        </div>
       </main>
     </div>
   );
@@ -174,6 +270,68 @@ const styles: { [key: string]: React.CSSProperties } = {
     background: "#eef2ff",
     color: "#4f46e5",
     fontWeight: 600,
+  },
+  slackItem: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "10px 12px",
+    background: "#f8f9fa",
+    borderRadius: "8px",
+    marginBottom: "8px",
+  },
+  slackName: {
+    fontSize: "14px",
+    fontWeight: 600,
+    color: "#1a1a2e",
+  },
+  slackDefault: {
+    fontSize: "12px",
+    color: "#888",
+    marginLeft: "8px",
+  },
+  slackUrl: {
+    display: "block",
+    fontSize: "11px",
+    color: "#999",
+    marginTop: "2px",
+  },
+  removeButton: {
+    padding: "4px 12px",
+    fontSize: "12px",
+    color: "#dc2626",
+    background: "#fef2f2",
+    border: "1px solid #fecaca",
+    borderRadius: "6px",
+    cursor: "pointer",
+  },
+  addForm: {
+    marginTop: "12px",
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: "8px",
+  },
+  addInput: {
+    padding: "10px 12px",
+    fontSize: "14px",
+    border: "1px solid #ddd",
+    borderRadius: "8px",
+    background: "white",
+  },
+  slackError: {
+    color: "#dc2626",
+    fontSize: "13px",
+    margin: 0,
+  },
+  addButton: {
+    padding: "10px",
+    fontSize: "14px",
+    fontWeight: 600,
+    color: "#4f46e5",
+    background: "#eef2ff",
+    border: "1px solid #c7d2fe",
+    borderRadius: "8px",
+    cursor: "pointer",
   },
   saveButton: {
     width: "100%",

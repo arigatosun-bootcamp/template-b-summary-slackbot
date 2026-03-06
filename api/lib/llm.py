@@ -110,3 +110,47 @@ def _summarize_anthropic(system_prompt: str, user_message: str) -> str:
         if "api_key" in str(e).lower() or "authentication" in str(e).lower():
             raise ValueError("Anthropic APIキーが無効です。設定を確認してください")
         raise ValueError(f"Anthropic APIエラー: {str(e)}")
+
+
+def summarize_site(pages: list, site_name: str = "", level: str = "普通", provider: str = "") -> str:
+    """
+    複数ページの内容からサイト全体の要約を生成する
+
+    Args:
+        pages: [{"url": str, "title": str, "content": str}, ...]
+        site_name: サイト名
+        level: 要約レベル
+        provider: LLMプロバイダ
+    """
+    if not provider:
+        provider = os.environ.get("LLM_PROVIDER", "openai")
+
+    level_instruction = LEVEL_INSTRUCTIONS.get(level, LEVEL_INSTRUCTIONS["普通"])
+
+    system_prompt = (
+        "あなたは企業・サイト分析の専門家です。\n"
+        "複数ページの情報をもとに、このサイト（企業・サービス）の全体像を日本語でまとめてください。\n"
+        f"{level_instruction}\n"
+        "以下の観点を含めてください（情報がある場合のみ）:\n"
+        "- 企業/サービスの概要\n"
+        "- 主な事業内容・サービス\n"
+        "- 特徴・強み\n"
+        "- ミッション・ビジョン（あれば）\n"
+        "要約のみを出力し、前置きや説明は不要です。"
+    )
+
+    user_message = f"サイト名: {site_name}\n\n"
+    for i, page in enumerate(pages, 1):
+        user_message += f"--- ページ{i}: {page['title']} ({page['url']}) ---\n"
+        user_message += f"{page['content']}\n\n"
+
+    # テキストが長すぎる場合は切り詰め
+    if len(user_message) > 12000:
+        user_message = user_message[:12000] + "\n...(以下省略)"
+
+    if provider == "openai":
+        return _summarize_openai(system_prompt, user_message)
+    elif provider == "anthropic":
+        return _summarize_anthropic(system_prompt, user_message)
+    else:
+        raise ValueError(f"未対応のLLMプロバイダです: {provider}")

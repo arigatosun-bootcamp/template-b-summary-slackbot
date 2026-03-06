@@ -7,25 +7,25 @@ import os
 import requests
 
 
-def post_to_slack(title: str, summary: str, url: str, level: str) -> bool:
+def post_to_slack(title: str, summary: str, url: str, level: str, webhook_urls: list = None) -> list:
     """
-    要約結果をSlackに投稿する
+    要約結果をSlackに投稿する（複数Webhook対応）
 
     Args:
         title: 記事タイトル
         summary: 要約テキスト
         url: 元記事のURL
         level: 要約レベル
+        webhook_urls: 投稿先Webhook URLのリスト。Noneなら環境変数を使用
 
     Returns:
-        bool: 投稿成功ならTrue
-
-    Raises:
-        ValueError: Webhook URLが未設定、または投稿失敗の場合
+        list: 各投稿先の結果 [{"url": str, "success": bool, "error": str|None}]
     """
-    webhook_url = os.environ.get("SLACK_WEBHOOK_URL", "")
-    if not webhook_url:
-        raise ValueError("SLACK_WEBHOOK_URLが設定されていません")
+    if not webhook_urls:
+        default_url = os.environ.get("SLACK_WEBHOOK_URL", "")
+        if not default_url:
+            raise ValueError("SLACK_WEBHOOK_URLが設定されていません")
+        webhook_urls = [default_url]
 
     # Slackメッセージのフォーマット
     message = {
@@ -59,17 +59,23 @@ def post_to_slack(title: str, summary: str, url: str, level: str) -> bool:
         ]
     }
 
-    try:
-        response = requests.post(
-            webhook_url,
-            data=json.dumps(message),
-            headers={"Content-Type": "application/json"},
-            timeout=10,
-        )
-        if response.status_code != 200:
-            raise ValueError(f"Slack投稿に失敗しました（HTTP {response.status_code}）")
-        return True
-    except requests.exceptions.Timeout:
-        raise ValueError("Slack投稿がタイムアウトしました")
-    except requests.exceptions.RequestException as e:
-        raise ValueError(f"Slack投稿エラー: {str(e)}")
+    results = []
+    for wh_url in webhook_urls:
+        try:
+            response = requests.post(
+                wh_url,
+                data=json.dumps(message),
+                headers={"Content-Type": "application/json"},
+                timeout=10,
+            )
+            if response.status_code != 200:
+                results.append({"url": wh_url[:30], "success": False, "error": f"HTTP {response.status_code}"})
+            else:
+                results.append({"url": wh_url[:30], "success": True, "error": None})
+        except requests.exceptions.RequestException as e:
+            results.append({"url": wh_url[:30], "success": False, "error": str(e)})
+
+    if not any(r["success"] for r in results):
+        raise ValueError("全てのSlack投稿先への投稿に失敗しました")
+
+    return results

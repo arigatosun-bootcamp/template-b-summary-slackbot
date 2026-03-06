@@ -5,7 +5,9 @@
 export interface SummarizeRequest {
   url: string;
   level: "簡単" | "普通" | "詳しく";
+  type?: "page" | "site";
   user_id?: string;
+  webhook_urls?: string[];
 }
 
 export interface SummarizeResponse {
@@ -13,6 +15,8 @@ export interface SummarizeResponse {
   summary: string;
   url: string;
   level: string;
+  type?: string;
+  page_count?: number;
   id?: string;
   slack_error?: string;
 }

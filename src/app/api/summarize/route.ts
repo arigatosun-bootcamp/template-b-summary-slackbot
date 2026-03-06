@@ -9,7 +9,7 @@ import path from "path";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { url, level = "普通", user_id = "" } = body;
+    const { url, level = "普通", type = "page", user_id = "" } = body;
 
     // Authorizationヘッダーからトークンを取得
     const authHeader = request.headers.get("Authorization") || "";
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await runPythonScript(
-      JSON.stringify({ url, level, user_id, auth_token: authToken })
+      JSON.stringify({ url, level, type, user_id, auth_token: authToken })
     );
     return NextResponse.json(JSON.parse(result));
   } catch (error) {
