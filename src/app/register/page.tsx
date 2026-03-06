@@ -171,6 +171,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     marginBottom: "16px",
     outline: "none",
     boxSizing: "border-box" as const,
+    background: "white",
   },
   error: {
     color: "#f44336",

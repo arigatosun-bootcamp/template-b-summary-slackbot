@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import Header from "@/components/Header";
+import SummaryForm from "@/components/SummaryForm";
 
 export default async function Home() {
   const supabase = await createServerSupabaseClient();
@@ -12,9 +13,7 @@ export default async function Home() {
         <h2 style={styles.heading}>記事を要約する</h2>
         <p style={styles.userInfo}>ログイン中: {user?.email}</p>
         <div style={styles.card}>
-          <p style={styles.placeholder}>
-            📝 Day2で要約フォームを実装します
-          </p>
+          <SummaryForm />
         </div>
       </main>
     </div>
@@ -31,6 +30,7 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontSize: "22px",
     fontWeight: 700,
     marginBottom: "8px",
+    color: "#1a1a2e",
   },
   userInfo: {
     fontSize: "13px",
@@ -40,12 +40,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   card: {
     background: "white",
     borderRadius: "12px",
-    padding: "40px",
+    padding: "32px",
     boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-    textAlign: "center" as const,
-  },
-  placeholder: {
-    color: "#999",
-    fontSize: "16px",
   },
 };
