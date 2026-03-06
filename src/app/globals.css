@@ -33,3 +33,143 @@ a {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* ===== ヘッダー ===== */
+.header {
+  background: #16213e;
+  padding: 12px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+}
+
+.header-logo {
+  color: white !important;
+  font-weight: 700;
+  font-size: 16px;
+  text-decoration: none;
+}
+
+.header-nav {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.nav-link {
+  color: rgba(255, 255, 255, 0.7) !important;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.nav-link:hover {
+  color: white !important;
+}
+
+.logout-button {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.logout-button:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* ハンバーガー（PC非表示） */
+.hamburger {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.hamburger-line {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: white;
+  border-radius: 2px;
+  transition: transform 0.3s, opacity 0.3s;
+}
+
+.menu-overlay {
+  display: none;
+}
+
+/* ===== スマホ（640px以下） ===== */
+@media (max-width: 640px) {
+  body {
+    font-size: 14px;
+  }
+
+  input, button, select {
+    font-size: 16px !important;
+  }
+
+  .hamburger {
+    display: flex;
+  }
+
+  /* ×アニメーション */
+  .hamburger-line.open:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+  }
+  .hamburger-line.open:nth-child(2) {
+    opacity: 0;
+  }
+  .hamburger-line.open:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+  }
+
+  .header-nav {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #16213e;
+    flex-direction: column;
+    padding: 8px 24px 16px;
+    gap: 0;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  .header-nav.nav-open {
+    display: flex;
+  }
+
+  .nav-link {
+    padding: 12px 0;
+    font-size: 15px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    width: 100%;
+  }
+
+  .logout-button {
+    margin-top: 8px;
+    width: 100%;
+    padding: 10px;
+    font-size: 15px !important;
+    text-align: center;
+  }
+
+  .menu-overlay {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+  }
+}

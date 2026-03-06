@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { createClient } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -7,6 +8,7 @@ import Link from "next/link";
 export default function Header() {
   const supabase = createClient();
   const router = useRouter();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -14,54 +16,47 @@ export default function Header() {
     router.refresh();
   };
 
+  const handleNavClick = () => {
+    setMenuOpen(false);
+  };
+
   return (
-    <header style={styles.header}>
-      <Link href="/" style={styles.logo}>
+    <header className="header">
+      <Link href="/" className="header-logo">
         Summary Slackbot
       </Link>
-      <nav style={styles.nav}>
-        <Link href="/" style={styles.navLink}>トップ</Link>
-        <Link href="/history" style={styles.navLink}>履歴</Link>
-        <Link href="/settings" style={styles.navLink}>設定</Link>
-        <button onClick={handleLogout} style={styles.logoutButton}>
+
+      {/* ハンバーガーボタン（スマホのみ表示） */}
+      <button
+        className="hamburger"
+        onClick={() => setMenuOpen(!menuOpen)}
+        aria-label="メニュー"
+      >
+        <span className={`hamburger-line ${menuOpen ? "open" : ""}`} />
+        <span className={`hamburger-line ${menuOpen ? "open" : ""}`} />
+        <span className={`hamburger-line ${menuOpen ? "open" : ""}`} />
+      </button>
+
+      {/* ナビゲーション */}
+      <nav className={`header-nav ${menuOpen ? "nav-open" : ""}`}>
+        <Link href="/" className="nav-link" onClick={handleNavClick}>
+          トップ
+        </Link>
+        <Link href="/history" className="nav-link" onClick={handleNavClick}>
+          履歴
+        </Link>
+        <Link href="/settings" className="nav-link" onClick={handleNavClick}>
+          設定
+        </Link>
+        <button onClick={handleLogout} className="logout-button">
           ログアウト
         </button>
       </nav>
+
+      {/* メニュー開いたときの背景オーバーレイ */}
+      {menuOpen && (
+        <div className="menu-overlay" onClick={() => setMenuOpen(false)} />
+      )}
     </header>
   );
 }
-
-const styles: { [key: string]: React.CSSProperties } = {
-  header: {
-    background: "#16213e",
-    padding: "12px 24px",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  logo: {
-    color: "white",
-    fontWeight: 700,
-    fontSize: "16px",
-    textDecoration: "none",
-  },
-  nav: {
-    display: "flex",
-    gap: "16px",
-    alignItems: "center",
-  },
-  navLink: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: "13px",
-    textDecoration: "none",
-  },
-  logoutButton: {
-    background: "rgba(255,255,255,0.15)",
-    color: "white",
-    border: "none",
-    borderRadius: "6px",
-    padding: "6px 14px",
-    fontSize: "13px",
-    cursor: "pointer",
-  },
-};

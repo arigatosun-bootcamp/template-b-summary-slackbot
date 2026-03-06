@@ -84,3 +84,34 @@ export async function getHistory(
 
   return data as SummaryRecord[];
 }
+
+export interface DuplicateCheckResponse {
+  exists: boolean;
+  summary: SummaryRecord | null;
+}
+
+/**
+ * URL重複チェック
+ */
+export async function checkDuplicate(
+  userId: string,
+  url: string,
+  authToken: string
+): Promise<DuplicateCheckResponse> {
+  const response = await fetch(
+    `/api/check_duplicate?user_id=${encodeURIComponent(userId)}&url=${encodeURIComponent(url)}`,
+    {
+      headers: {
+        Authorization: `Bearer ${authToken}`,
+      },
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    return { exists: false, summary: null };
+  }
+
+  return data as DuplicateCheckResponse;
+}

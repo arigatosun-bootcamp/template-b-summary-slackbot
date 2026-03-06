@@ -1,29 +1,54 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
-import { summarizeArticle } from "@/lib/api";
+import { summarizeArticle, checkDuplicate } from "@/lib/api";
 import { createClient } from "@/lib/supabase";
 import Loading from "./Loading";
+
+type Level = "簡単" | "普通" | "詳しく";
+const VALID_LEVELS: Level[] = ["簡単", "普通", "詳しく"];
+
+function getStoredLevel(): Level {
+  const stored = localStorage.getItem("defaultLevel");
+  if (stored && VALID_LEVELS.includes(stored as Level)) {
+    return stored as Level;
+  }
+  return "普通";
+}
+
+function useDefaultLevel(): Level {
+  return useSyncExternalStore(
+    (callback) => {
+      window.addEventListener("storage", callback);
+      return () => window.removeEventListener("storage", callback);
+    },
+    () => getStoredLevel(),
+    () => "普通" as Level
+  );
+}
 
 export default function SummaryForm() {
   const supabase = createClient();
   const router = useRouter();
+  const defaultLevel = useDefaultLevel();
   const [url, setUrl] = useState("");
-  const [level, setLevel] = useState<"簡単" | "普通" | "詳しく">("普通");
+  const [level, setLevel] = useState<Level | null>(null);
+  const activeLevel = level ?? defaultLevel;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [duplicateWarning, setDuplicateWarning] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setDuplicateWarning(false);
 
     if (!url.trim()) {
       setError("URLを入力してください");
       return;
     }
 
-    // 簡易URL検証
     try {
       new URL(url.trim());
     } catch {
@@ -31,20 +56,29 @@ export default function SummaryForm() {
       return;
     }
 
+    // ユーザー情報と認証トークンを取得
+    const { data: { session } } = await supabase.auth.getSession();
+    const userId = session?.user?.id || "";
+    const authToken = session?.access_token || "";
+
+    // 重複チェック（初回のみ）
+    if (!duplicateWarning && userId && authToken) {
+      const dup = await checkDuplicate(userId, url.trim(), authToken);
+      if (dup.exists) {
+        setDuplicateWarning(true);
+        return;
+      }
+    }
+
     setLoading(true);
+    setDuplicateWarning(false);
 
     try {
-      // ユーザー情報と認証トークンを取得
-      const { data: { session } } = await supabase.auth.getSession();
-      const userId = session?.user?.id || "";
-      const authToken = session?.access_token || "";
-
       const result = await summarizeArticle(
-        { url: url.trim(), level, user_id: userId },
+        { url: url.trim(), level: activeLevel, user_id: userId },
         authToken
       );
 
-      // 結果をsessionStorageに保存してresultページへ遷移
       sessionStorage.setItem("summaryResult", JSON.stringify(result));
       router.push("/result");
     } catch (err) {
@@ -57,7 +91,6 @@ export default function SummaryForm() {
     <>
       {loading && <Loading />}
       <form onSubmit={handleSubmit} style={styles.form}>
-        {/* URL入力 */}
         <div style={styles.field}>
           <label htmlFor="url" style={styles.label}>
             記事のURL
@@ -66,14 +99,16 @@ export default function SummaryForm() {
             id="url"
             type="text"
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            onChange={(e) => {
+              setUrl(e.target.value);
+              setDuplicateWarning(false);
+            }}
             placeholder="https://example.com/article"
             style={styles.input}
             disabled={loading}
           />
         </div>
 
-        {/* 要約レベル選択 */}
         <div style={styles.field}>
           <label style={styles.label}>要約レベル</label>
           <div style={styles.levelGroup}>
@@ -84,7 +119,7 @@ export default function SummaryForm() {
                 onClick={() => setLevel(l)}
                 style={{
                   ...styles.levelButton,
-                  ...(level === l ? styles.levelButtonActive : {}),
+                  ...(activeLevel === l ? styles.levelButtonActive : {}),
                 }}
                 disabled={loading}
               >
@@ -94,10 +129,19 @@ export default function SummaryForm() {
           </div>
         </div>
 
-        {/* エラーメッセージ */}
+        {duplicateWarning && (
+          <div style={styles.warning}>
+            <p style={styles.warningText}>
+              このURLは既に要約済みです。もう一度要約しますか？
+            </p>
+            <button type="submit" style={styles.warningButton}>
+              再要約する
+            </button>
+          </div>
+        )}
+
         {error && <p style={styles.error}>{error}</p>}
 
-        {/* 送信ボタン */}
         <button
           type="submit"
           style={{
@@ -157,6 +201,27 @@ const styles: { [key: string]: React.CSSProperties } = {
     background: "#eef2ff",
     color: "#4f46e5",
     fontWeight: 600,
+  },
+  warning: {
+    padding: "12px 16px",
+    background: "#fffbeb",
+    border: "1px solid #f59e0b",
+    borderRadius: "8px",
+  },
+  warningText: {
+    fontSize: "14px",
+    color: "#92400e",
+    margin: "0 0 8px 0",
+  },
+  warningButton: {
+    padding: "8px 16px",
+    fontSize: "13px",
+    fontWeight: 600,
+    color: "#92400e",
+    background: "#fef3c7",
+    border: "1px solid #f59e0b",
+    borderRadius: "6px",
+    cursor: "pointer",
   },
   error: {
     color: "#dc2626",

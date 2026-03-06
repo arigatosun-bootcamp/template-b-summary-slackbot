@@ -110,3 +110,34 @@ def get_summaries(user_id: str, auth_token: str = "", limit: int = 50) -> list:
         raise ValueError(f"履歴取得に失敗しました: {response.text}")
 
     return response.json()
+
+
+def check_duplicate(user_id: str, url: str, auth_token: str = "") -> dict:
+    """
+    同じURLで既に要約済みかチェックする
+
+    Returns:
+        dict: {"exists": bool, "summary": dict|None}
+    """
+    base_url = _get_base_url()
+    headers = _get_headers(auth_token)
+
+    response = requests.get(
+        f"{base_url}/summaries",
+        headers=headers,
+        params={
+            "user_id": f"eq.{user_id}",
+            "url": f"eq.{url}",
+            "order": "created_at.desc",
+            "limit": 1,
+        },
+        timeout=10,
+    )
+
+    if response.status_code != 200:
+        return {"exists": False, "summary": None}
+
+    data = response.json()
+    if data:
+        return {"exists": True, "summary": data[0]}
+    return {"exists": False, "summary": None}
