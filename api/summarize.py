@@ -13,9 +13,12 @@ Response:
 """
 
 import json
+import os
 from http.server import BaseHTTPRequestHandler
 from api.lib.scraper import fetch_article
 from api.lib.llm import summarize
+from api.lib.slack import post_to_slack
+from api.lib.database import save_summary
 
 
 class handler(BaseHTTPRequestHandler):
@@ -56,13 +59,53 @@ class handler(BaseHTTPRequestHandler):
                 level=level,
             )
 
+            # Slack投稿（Webhook URLが設定されている場合のみ）
+            slack_error = None
+            if os.environ.get("SLACK_WEBHOOK_URL"):
+                try:
+                    post_to_slack(
+                        title=article["title"],
+                        summary=summary,
+                        url=url,
+                        level=level,
+                    )
+                except Exception as e:
+                    slack_error = str(e)
+
+            # DB保存（認証トークンがある場合のみ）
+            saved_id = None
+            auth_header = self.headers.get("Authorization", "")
+            user_id = data.get("user_id", "")
+            auth_token = auth_header.replace("Bearer ", "") if auth_header else ""
+
+            if user_id and auth_token:
+                try:
+                    result = save_summary(
+                        user_id=user_id,
+                        url=url,
+                        title=article["title"],
+                        summary=summary,
+                        level=level,
+                        llm_provider=os.environ.get("LLM_PROVIDER", "openai"),
+                        auth_token=auth_token,
+                    )
+                    saved_id = result.get("id")
+                except Exception:
+                    pass  # DB保存失敗は要約結果の返却を妨げない
+
             # 成功レスポンス
-            self._send_json(200, {
+            response_data = {
                 "title": article["title"],
                 "summary": summary,
                 "url": url,
                 "level": level,
-            })
+            }
+            if saved_id:
+                response_data["id"] = saved_id
+            if slack_error:
+                response_data["slack_error"] = slack_error
+
+            self._send_json(200, response_data)
 
         except ValueError as e:
             self._send_error(400, str(e))

@@ -9,7 +9,11 @@ import path from "path";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { url, level = "普通" } = body;
+    const { url, level = "普通", user_id = "" } = body;
+
+    // Authorizationヘッダーからトークンを取得
+    const authHeader = request.headers.get("Authorization") || "";
+    const authToken = authHeader.replace("Bearer ", "");
 
     if (!url || !url.trim()) {
       return NextResponse.json(
@@ -25,7 +29,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await runPythonScript(JSON.stringify({ url, level }));
+    const result = await runPythonScript(
+      JSON.stringify({ url, level, user_id, auth_token: authToken })
+    );
     return NextResponse.json(JSON.parse(result));
   } catch (error) {
     const message =

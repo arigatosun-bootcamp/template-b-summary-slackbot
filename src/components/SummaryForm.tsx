@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { summarizeArticle } from "@/lib/api";
+import { createClient } from "@/lib/supabase";
 import Loading from "./Loading";
 
 export default function SummaryForm() {
+  const supabase = createClient();
   const router = useRouter();
   const [url, setUrl] = useState("");
   const [level, setLevel] = useState<"簡単" | "普通" | "詳しく">("普通");
@@ -32,7 +34,15 @@ export default function SummaryForm() {
     setLoading(true);
 
     try {
-      const result = await summarizeArticle({ url: url.trim(), level });
+      // ユーザー情報と認証トークンを取得
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id || "";
+      const authToken = session?.access_token || "";
+
+      const result = await summarizeArticle(
+        { url: url.trim(), level, user_id: userId },
+        authToken
+      );
 
       // 結果をsessionStorageに保存してresultページへ遷移
       sessionStorage.setItem("summaryResult", JSON.stringify(result));
