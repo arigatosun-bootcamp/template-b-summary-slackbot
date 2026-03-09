@@ -1,0 +1,14 @@
+{
+  "builds": [
+    { "src": "api/summarize.py", "use": "@vercel/python" },
+    { "src": "api/history.py", "use": "@vercel/python" },
+    { "src": "api/check_duplicate.py", "use": "@vercel/python" },
+    { "src": "package.json", "use": "@vercel/next" }
+  ],
+  "routes": [
+    { "src": "/api/summarize", "dest": "/api/summarize.py" },
+    { "src": "/api/history", "dest": "/api/history.py" },
+    { "src": "/api/check_duplicate", "dest": "/api/check_duplicate.py" },
+    { "src": "/(.*)", "dest": "/$1" }
+  ]
+}
