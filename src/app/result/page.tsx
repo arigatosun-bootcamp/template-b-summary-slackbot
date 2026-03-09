@@ -1,42 +1,31 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/components/Header";
 import type { SummarizeResponse } from "@/lib/api";
 
-// getSnapshotのキャッシュ（同じ文字列なら同じオブジェクト参照を返す）
-let cachedRaw: string | null = null;
-let cachedResult: SummarizeResponse | null = null;
-
-function getSnapshot(): SummarizeResponse | null {
-  const stored = sessionStorage.getItem("summaryResult");
-  if (stored !== cachedRaw) {
-    cachedRaw = stored;
-    cachedResult = stored ? JSON.parse(stored) : null;
-  }
-  return cachedResult;
-}
-
-function useSessionResult(): SummarizeResponse | null {
-  return useSyncExternalStore(
-    (callback) => {
-      window.addEventListener("storage", callback);
-      return () => window.removeEventListener("storage", callback);
-    },
-    getSnapshot,
-    () => null
-  );
-}
-
 export default function ResultPage() {
   const router = useRouter();
-  const result = useSessionResult();
+  const [result, setResult] = useState<SummarizeResponse | null>(null);
+  const [checked, setChecked] = useState(false);
 
-  if (!result) {
-    if (typeof window !== "undefined") {
-      router.push("/");
+  useEffect(() => {
+    const stored = sessionStorage.getItem("summaryResult");
+    if (stored) {
+      setResult(JSON.parse(stored));
     }
+    setChecked(true);
+  }, []);
+
+  // マウント完了前は何も表示しない
+  if (!checked) {
+    return null;
+  }
+
+  // マウント後にデータがなければトップに戻る
+  if (!result) {
+    router.push("/");
     return null;
   }
 
